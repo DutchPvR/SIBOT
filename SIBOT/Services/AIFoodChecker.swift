@@ -30,7 +30,7 @@ enum AIFoodError: LocalizedError {
 enum AIFoodChecker {
     static let keyAccount = "openrouter-api-key"
     static let modelDefaultsKey = "aiModel"
-    static let defaultModel = "anthropic/claude-sonnet-4.5"
+    static let defaultModel = "anthropic/claude-haiku-5.5"
 
     static var model: String {
         let saved = UserDefaults.standard.string(forKey: modelDefaultsKey)?

@@ -30,12 +30,18 @@ struct SettingsView: View {
                         .focused($fieldFocused)
                         .submitLabel(.done)
                         .onSubmit { fieldFocused = false }
-                    TextField("Model", text: $aiModel)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .focused($fieldFocused)
-                        .submitLabel(.done)
-                        .onSubmit { fieldFocused = false }
+                    Picker("Model", selection: modelChoice) {
+                        ForEach(Self.models, id: \.id) { Text($0.name).tag($0.id) }
+                        Text("Custom…").tag(Self.customTag)
+                    }
+                    if isCustomModel {
+                        TextField("Model name, e.g. vendor/model", text: $aiModel)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .focused($fieldFocused)
+                            .submitLabel(.done)
+                            .onSubmit { fieldFocused = false }
+                    }
                     Button(keySaved ? "Saved ✓" : "Save") {
                         Keychain.save(apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
                                       account: AIFoodChecker.keyAccount)
@@ -46,7 +52,7 @@ struct SettingsView: View {
                 } header: {
                     Text("AI fallback (optional)")
                 } footer: {
-                    Text("Used for foods that are not on the built-in list. Enter any model name from openrouter.ai/models, for example anthropic/claude-sonnet-4.5. The key is stored in this phone's Keychain and only sent to OpenRouter.")
+                    Text("Used for foods that are not on the built-in list. Pick a model, or choose Custom to enter any name from openrouter.ai/models. The key is stored in this phone's Keychain and only sent to OpenRouter.")
                 }
 
                 Section {
@@ -70,6 +76,35 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private static let customTag = "__custom__"
+
+    /// Cheap models that handle a one-line food rating well. The first is the default.
+    private static let models: [(id: String, name: String)] = [
+        ("anthropic/claude-haiku-5.5", "Claude Haiku 5.5 (cheap, recommended)"),
+        ("google/gemini-3.7-flash", "Gemini 3.7 Flash (cheap)"),
+        ("anthropic/claude-sonnet-5", "Claude Sonnet 5 (best, pricier)")
+    ]
+
+    @State private var customSelected = false
+
+    private var isCustomModel: Bool {
+        customSelected || !Self.models.contains { $0.id == aiModel }
+    }
+
+    private var modelChoice: Binding<String> {
+        Binding(
+            get: { isCustomModel ? Self.customTag : aiModel },
+            set: { choice in
+                if choice == Self.customTag {
+                    customSelected = true
+                } else {
+                    customSelected = false
+                    aiModel = choice
+                }
+            }
+        )
     }
 
     private var gapText: String {
