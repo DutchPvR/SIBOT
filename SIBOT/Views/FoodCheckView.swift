@@ -1,64 +1,160 @@
 import SwiftData
 import SwiftUI
 
+/// The Check tab: a quick cheat sheet by default. Pull down to reveal the search bar,
+/// which takes over the screen with results while you search.
 struct FoodCheckView: View {
+    @State private var query = ""
+
+    var body: some View {
+        NavigationStack {
+            FoodCheckContent(query: query)
+                .navigationTitle("Can I eat this?")
+                .searchable(
+                    text: $query,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: "Search a food, e.g. oatmeal"
+                )
+        }
+    }
+}
+
+private struct FoodCheckContent: View {
+    /// True while the search bar is active. Only works inside the view that has `.searchable`.
+    @Environment(\.isSearching) private var isSearching
     @Environment(\.modelContext) private var modelContext
 
-    @State private var query = ""
+    let query: String
+
     @State private var aiVerdict: AIFoodVerdict?
     @State private var aiError: String?
     @State private var isAsking = false
     @State private var loggedMessage: String?
 
-    private var results: [FoodItem] { FoodDatabase.shared.search(query) }
     private var trimmed: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var results: [FoodItem] { FoodDatabase.shared.search(query) }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Theme.background
-                ScrollView {
-                    VStack(spacing: 14) {
-                        if trimmed.isEmpty {
-                            hint
-                        } else {
-                            ForEach(results) { item in
-                                resultCard(item)
-                            }
-                            askClaudeCard
-                        }
-                        if let loggedMessage {
-                            Text(loggedMessage)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
+        ZStack {
+            Theme.background
+            ScrollView {
+                VStack(spacing: 14) {
+                    if isSearching || !trimmed.isEmpty {
+                        searchResults
+                    } else {
+                        cheatSheet
                     }
-                    .padding()
                 }
+                .padding()
             }
-            .navigationTitle("Can I eat this?")
-            .searchable(text: $query, prompt: "Search a food, e.g. oatmeal")
-            .onChange(of: query) { _, _ in
-                aiVerdict = nil
-                aiError = nil
-                loggedMessage = nil
-            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .onChange(of: query) { _, _ in
+            aiVerdict = nil
+            aiError = nil
+            loggedMessage = nil
         }
     }
 
-    private var hint: some View {
-        VStack(spacing: 8) {
-            Text("🥦 🍚 🍗")
-                .font(.system(size: 40))
-            Text("Search a food to see if it fits the low-fermentation diet.")
-                .multilineTextAlignment(.center)
+    // MARK: - Cheat sheet
+
+    private var cheatSheet: some View {
+        VStack(spacing: 14) {
+            Label("Not here? Pull down to search", systemImage: "arrow.down")
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text("Based on a starter list from the Cedars-Sinai diet. Double-check with your own guide or doctor.")
+
+            sheetCard(
+                status: .safe,
+                title: "Good",
+                lines: [
+                    "🍗 Meat, fish, eggs, plain proteins",
+                    "🍚 White rice, potatoes, sweet potatoes",
+                    "🍞 White, sourdough or French bread, plain pasta",
+                    "🥕 Carrots, cucumber, tomato, zucchini, peppers, eggplant, green beans",
+                    "🍓 Most fruit, one serving at a time (berries, citrus, grapes, pineapple, melon)",
+                    "🥛 Lactose-free milk, hard aged cheese",
+                    "🥜 Nuts, oils, butter",
+                    "🍫 Plain sugar, dark chocolate"
+                ]
+            )
+
+            sheetCard(
+                status: .limit,
+                title: "Small amounts",
+                lines: [
+                    "🧅 Onion and garlic, cooked and small",
+                    "🥬 Leafy greens and salad, only as a side",
+                    "🍌 Apples, pears, ripe bananas",
+                    "🥑 Avocado, mushrooms, honey"
+                ]
+            )
+
+            sheetCard(
+                status: .avoid,
+                title: "Not good",
+                lines: [
+                    "🥦 Broccoli, cauliflower, cabbage, Brussels sprouts",
+                    "🫘 Beans, lentils, chickpeas, hummus",
+                    "🌾 Whole wheat, multigrain, oats, bran",
+                    "🧀 Regular milk, yogurt, soft cheese, ice cream",
+                    "🍬 Sugar alcohols (sorbitol, xylitol), Splenda, gum",
+                    "🍇 Dried fruit (raisins, dates, figs, prunes)",
+                    "🌱 Chia and flax seeds",
+                    "🫙 Probiotic and fermented foods (kombucha, kimchi)"
+                ]
+            )
+
+            Text("Quick reference from the starter list, based on the Cedars-Sinai diet. Check your own guide or doctor for anything that matters.")
                 .font(.footnote)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.tertiary)
+                .padding(.horizontal)
         }
-        .padding(.top, 40)
+    }
+
+    private func sheetCard(status: FoodStatus, title: String, lines: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\(status.emoji) \(title)")
+                .font(.system(.title3, design: .rounded).weight(.heavy))
+                .foregroundStyle(status.color)
+            ForEach(lines, id: \.self) { line in
+                Text(line)
+                    .font(.system(.subheadline, design: .rounded))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(status.color.opacity(0.35), lineWidth: 1.5)
+        )
+    }
+
+    // MARK: - Search results
+
+    @ViewBuilder
+    private var searchResults: some View {
+        if trimmed.isEmpty {
+            VStack(spacing: 8) {
+                Text("🔎")
+                    .font(.system(size: 40))
+                Text("Type a food to see if it fits the diet.")
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 40)
+        } else {
+            ForEach(results) { item in
+                resultCard(item)
+            }
+            askAICard
+            if let loggedMessage {
+                Text(loggedMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     private func resultCard(_ item: FoodItem) -> some View {
@@ -78,7 +174,7 @@ struct FoodCheckView: View {
         .card()
     }
 
-    private var askClaudeCard: some View {
+    private var askAICard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(results.isEmpty ? "Not on the list" : "Not what you meant?")
                 .font(.system(.headline, design: .rounded))
