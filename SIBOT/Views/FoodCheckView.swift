@@ -60,10 +60,6 @@ private struct FoodCheckContent: View {
 
     private var cheatSheet: some View {
         VStack(spacing: 14) {
-            Label("Not here? Pull down to search", systemImage: "arrow.down")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
-
             sheetCard(
                 status: .safe,
                 title: "Good",
@@ -104,12 +100,6 @@ private struct FoodCheckContent: View {
                     "Probiotic and fermented foods (kombucha, kimchi)"
                 ]
             )
-
-            Text("Quick reference from the starter list, based on the Cedars-Sinai diet. Check your own guide or doctor for anything that matters.")
-                .font(.footnote)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.tertiary)
-                .padding(.horizontal)
         }
     }
 
