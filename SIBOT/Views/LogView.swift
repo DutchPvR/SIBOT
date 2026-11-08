@@ -1,6 +1,10 @@
 import SwiftData
 import SwiftUI
 
+enum LogEntryKind {
+    case meal, bowel
+}
+
 enum LogMode: String, CaseIterable, Identifiable {
     case day = "Day"
     case week = "Week"
@@ -14,12 +18,14 @@ struct LogView: View {
     @Query(sort: \MealEntry.date) private var entries: [MealEntry]
     @Query(sort: \SupplementLog.date) private var supplementLogs: [SupplementLog]
     @Query private var dailyChecks: [DailyCheck]
+    @Query(sort: \BowelMovement.date) private var bowelMovements: [BowelMovement]
 
     @State private var mode: LogMode = .day
     @State private var selected = Date()
     @State private var showingAdd = false
     @State private var addSeed = Date()
     @State private var showingReports = false
+    @State private var showingBowel = false
 
     private var calendar: Calendar { .current }
 
@@ -48,9 +54,9 @@ struct LogView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        addSeed = addDate
-                        showingAdd = true
+                    Menu {
+                        Button("Meal") { openAdd(addDate, .meal) }
+                        Button("Bowel movement") { openAdd(addDate, .bowel) }
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -61,6 +67,9 @@ struct LogView: View {
             }
             .sheet(isPresented: $showingAdd) {
                 AddMealSheet(initialDate: addSeed)
+            }
+            .sheet(isPresented: $showingBowel) {
+                BowelSheet(initialDate: addSeed)
             }
         }
     }
@@ -126,6 +135,7 @@ struct LogView: View {
                 day: selected,
                 meals: entries.filter { calendar.isDate($0.date, inSameDayAs: day) },
                 supplementLogs: supplementLogs.filter { calendar.isDate($0.date, inSameDayAs: day) },
+                bowelMovements: bowelMovements.filter { calendar.isDate($0.date, inSameDayAs: day) },
                 check: dailyChecks.first { calendar.isDate($0.day, inSameDayAs: day) },
                 onAddAt: openAdd
             )
@@ -148,17 +158,20 @@ struct LogView: View {
     }
 
     /// Long press on a day: add an entry for it (now if it is today, otherwise midday).
-    private func addOnDay(_ day: Date) {
+    private func addOnDay(_ day: Date, _ kind: LogEntryKind) {
         if calendar.isDateInToday(day) {
-            openAdd(Date())
+            openAdd(Date(), kind)
         } else {
-            openAdd(calendar.date(bySettingHour: 12, minute: 0, second: 0, of: day) ?? day)
+            openAdd(calendar.date(bySettingHour: 12, minute: 0, second: 0, of: day) ?? day, kind)
         }
     }
 
-    private func openAdd(_ date: Date) {
+    private func openAdd(_ date: Date, _ kind: LogEntryKind) {
         addSeed = date
-        showingAdd = true
+        switch kind {
+        case .meal: showingAdd = true
+        case .bowel: showingBowel = true
+        }
     }
 
     private func openDay(_ day: Date) {

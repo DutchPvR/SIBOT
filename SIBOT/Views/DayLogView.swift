@@ -8,11 +8,13 @@ struct DayLogView: View {
     let day: Date
     let meals: [MealEntry]
     let supplementLogs: [SupplementLog]
+    let bowelMovements: [BowelMovement]
     let check: DailyCheck?
-    let onAddAt: (Date) -> Void
+    let onAddAt: (Date, LogEntryKind) -> Void
 
     @State private var editingMeal: MealEntry?
     @State private var addingTo: Date?
+    @State private var editingBowel: BowelMovement?
 
     private var calendar: Calendar { .current }
 
@@ -22,6 +24,7 @@ struct DayLogView: View {
             timeline
         }
         .sheet(item: $editingMeal) { EditMealSheet(meal: $0) }
+        .sheet(item: $editingBowel) { BowelSheet(existing: $0) }
         .sheet(isPresented: Binding(get: { addingTo != nil }, set: { if !$0 { addingTo = nil } })) {
             AddMealSheet(initialDate: addingTo ?? Date(), title: "Add to this meal")
         }
@@ -67,6 +70,7 @@ struct DayLogView: View {
     private func hourRow(_ hour: Int) -> some View {
         let hourMeals = meals.filter { calendar.component(.hour, from: $0.date) == hour }
         let hourSupplements = supplementLogs.filter { calendar.component(.hour, from: $0.date) == hour }
+        let hourBowel = bowelMovements.filter { calendar.component(.hour, from: $0.date) == hour }
 
         return HStack(alignment: .top, spacing: 10) {
             Text(hourLabel(hour))
@@ -78,6 +82,9 @@ struct DayLogView: View {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(hourMeals) { meal in
                     mealPill(meal)
+                }
+                ForEach(hourBowel) { movement in
+                    bowelRow(movement)
                 }
                 ForEach(hourSupplements) { log in
                     supplementPill(log)
@@ -91,11 +98,9 @@ struct DayLogView: View {
         }
         .contentShape(Rectangle())
         .contextMenu {
-            Button {
-                onAddAt(calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day)
-            } label: {
-                Label("Add entry at \(hourLabel(hour))", systemImage: "plus")
-            }
+            let time = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day
+            Button("Add meal at \(hourLabel(hour))") { onAddAt(time, .meal) }
+            Button("Add bowel movement at \(hourLabel(hour))") { onAddAt(time, .bowel) }
         }
     }
 
@@ -133,6 +138,28 @@ struct DayLogView: View {
             .foregroundStyle(.primary)
             .padding(.vertical, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+    }
+
+    private func bowelRow(_ movement: BowelMovement) -> some View {
+        Menu {
+            Button { editingBowel = movement } label: { Label("Edit", systemImage: "pencil") }
+            Button("Delete", role: .destructive) { modelContext.delete(movement) }
+        } label: {
+            HStack(spacing: 8) {
+                Circle()
+                    .strokeBorder(Color.secondary, lineWidth: 1.5)
+                    .frame(width: 10, height: 10)
+                Text(movement.typeText)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+                Text(movement.date.formatted(date: .omitted, time: .shortened))
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 2)
             .contentShape(Rectangle())
         }
     }

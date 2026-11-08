@@ -6,7 +6,7 @@ struct MonthLogView: View {
     let mealsByDay: [Date: [MealEntry]]
     let checksByDay: [Date: DailyCheck]
     let onSelectDay: (Date) -> Void
-    let onAddToDay: (Date) -> Void
+    let onAddToDay: (Date, LogEntryKind) -> Void
 
     private var calendar: Calendar { .current }
 
@@ -95,7 +95,8 @@ struct MonthLogView: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            Button { onAddToDay(day) } label: { Label("Add entry", systemImage: "plus") }
+            Button("Add meal") { onAddToDay(day, .meal) }
+            Button("Add bowel movement") { onAddToDay(day, .bowel) }
         }
     }
 

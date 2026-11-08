@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// One journal entry per day: the bloat answer, how bad it was, symptoms and bowel movements.
+/// One journal entry per day: the bloat answer, how bad it was and symptoms.
 @Model
 final class DailyCheck {
     /// Start of the day this entry belongs to.
@@ -13,6 +13,7 @@ final class DailyCheck {
     var severity: Int = 0
     /// Comma separated symptom names.
     var symptomsRaw: String = ""
+    /// Old fields: bowel movements are now their own timed entries (BowelMovement).
     var bowelCount: Int = 0
     /// Bristol stool type 1...7; 0 means not set.
     var bowelType: Int = 0
@@ -40,6 +41,6 @@ final class DailyCheck {
 
     /// True when there is nothing worth keeping in this entry.
     var isEmpty: Bool {
-        !answered && bowelCount == 0 && bowelType == 0
+        !answered
     }
 }

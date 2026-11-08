@@ -8,6 +8,7 @@ struct ReportsView: View {
     @Query private var checks: [DailyCheck]
     @Query private var supplements: [Supplement]
     @Query private var supplementLogs: [SupplementLog]
+    @Query private var bowelMovements: [BowelMovement]
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FoodTrial.startDate, order: .reverse) private var trials: [FoodTrial]
     @State private var showingNewTrial = false
@@ -17,7 +18,7 @@ struct ReportsView: View {
     @State private var files: (pdf: URL, csv: URL)?
 
     private var input: ReportBuilder.Input {
-        ReportBuilder.Input(days: days, meals: meals, checks: checks, supplements: supplements, supplementLogs: supplementLogs)
+        ReportBuilder.Input(days: days, meals: meals, checks: checks, supplements: supplements, supplementLogs: supplementLogs, bowelMovements: bowelMovements)
     }
 
     var body: some View {

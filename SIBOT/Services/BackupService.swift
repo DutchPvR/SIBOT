@@ -33,11 +33,13 @@ struct BackupFile: Codable {
         var supplementID: UUID; var supplementName: String; var date: Date; var day: Date; var taken: Bool
     }
 
+    struct Bowel: Codable { var date: Date; var type: Int }
     struct Trial: Codable { var food: String; var startDate: Date; var result: Int; var notes: String }
 
     var version = 1
     var personalFoods: [String: String]?
     var trials: [Trial]?
+    var bowelMovements: [Bowel]?
     var exportedAt = Date()
     var gapHours: Double = 5
     var meals: [Meal] = []
@@ -68,6 +70,7 @@ enum BackupService {
             .init(supplementID: $0.supplementID, supplementName: $0.supplementName, date: $0.date, day: $0.day, taken: $0.taken)
         }
         file.personalFoods = PersonalFoods.all
+        file.bowelMovements = try context.fetch(FetchDescriptor<BowelMovement>()).map { .init(date: $0.date, type: $0.type) }
         file.trials = try context.fetch(FetchDescriptor<FoodTrial>()).map {
             .init(food: $0.food, startDate: $0.startDate, result: $0.resultRaw, notes: $0.notes)
         }
@@ -97,6 +100,7 @@ enum BackupService {
         try context.delete(model: Supplement.self)
         try context.delete(model: SupplementLog.self)
         try context.delete(model: FoodTrial.self)
+        try context.delete(model: BowelMovement.self)
 
         for m in file.meals {
             context.insert(MealEntry(date: m.date, text: m.text,
@@ -133,6 +137,7 @@ enum BackupService {
             trial.notes = t.notes
             context.insert(trial)
         }
+        for b in file.bowelMovements ?? [] { context.insert(BowelMovement(date: b.date, type: b.type)) }
         if let personal = file.personalFoods { PersonalFoods.all = personal }
         try context.save()
         MealTimerStore.gapHours = file.gapHours

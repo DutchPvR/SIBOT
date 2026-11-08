@@ -8,6 +8,7 @@ enum ReportBuilder {
         let checks: [DailyCheck]
         let supplements: [Supplement]
         let supplementLogs: [SupplementLog]
+        let bowelMovements: [BowelMovement]
     }
 
     private static var calendar: Calendar { .current }
@@ -50,10 +51,10 @@ enum ReportBuilder {
                     if !check.symptoms.isEmpty { details.append(check.symptoms.joined(separator: " + ")) }
                     row(day, "", "Bloat", bloated ? "Bloated" : "No bloat", bloated ? "Bloated" : "No bloat", details.joined(separator: "; "))
                 }
-                if check.bowelCount > 0 || check.bowelType > 0 {
-                    let type = check.bowelType > 0 ? "Bristol type \(check.bowelType)" : ""
-                    row(day, "", "Bowel", "\(check.bowelCount) movement(s)", type, DailyCheck.bristolNames[check.bowelType] ?? "")
-                }
+            }
+            for movement in input.bowelMovements.filter({ calendar.isDate($0.date, inSameDayAs: day) }).sorted(by: { $0.date < $1.date }) {
+                let type = movement.type > 0 ? "Bristol type \(movement.type)" : ""
+                row(day, timeText(movement.date), "Bowel", "Bowel movement", type, BowelMovement.typeNames[movement.type] ?? "")
             }
             for log in input.supplementLogs.filter({ calendar.isDate($0.day, inSameDayAs: day) }).sorted(by: { $0.date < $1.date }) {
                 row(day, timeText(log.date), "Supplement", log.supplementName, log.taken ? "Taken" : "Skipped", "")
@@ -159,7 +160,8 @@ enum ReportBuilder {
                 let meals = input.meals.filter { calendar.isDate($0.date, inSameDayAs: day) }.sorted { $0.date < $1.date }
                 let check = input.checks.first { calendar.isDate($0.day, inSameDayAs: day) }
                 let logs = input.supplementLogs.filter { calendar.isDate($0.day, inSameDayAs: day) }
-                if meals.isEmpty && check == nil && logs.isEmpty { continue }
+                let hasBowel = input.bowelMovements.contains { calendar.isDate($0.date, inSameDayAs: day) }
+                if meals.isEmpty && check == nil && logs.isEmpty && !hasBowel { continue }
 
                 var header = day.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
                 if let bloated = check?.answer {
@@ -170,9 +172,11 @@ enum ReportBuilder {
                 if let check, check.answer == true, !check.symptoms.isEmpty {
                     page.write("Symptoms: \(check.symptoms.joined(separator: ", "))", font: body, color: grey, indent: 12, after: 1)
                 }
-                if let check, check.bowelCount > 0 || check.bowelType > 0 {
-                    var text = "Bowel: \(check.bowelCount) movement(s)"
-                    if check.bowelType > 0 { text += ", Bristol type \(check.bowelType)" }
+                let movements = input.bowelMovements.filter { calendar.isDate($0.date, inSameDayAs: day) }
+                if !movements.isEmpty {
+                    let types = movements.map(\.type).filter { $0 > 0 }.map(String.init)
+                    var text = "Bowel: \(movements.count) movement(s)"
+                    if !types.isEmpty { text += ", Bristol type \(types.joined(separator: ", "))" }
                     page.write(text, font: body, color: grey, indent: 12, after: 1)
                 }
                 for meal in meals {

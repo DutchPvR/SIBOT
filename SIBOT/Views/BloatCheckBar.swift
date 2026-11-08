@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// The journal block at the top of a day: bloat, severity, symptoms and bowel movements.
+/// The journal block at the top of a day: bloat, severity and symptoms.
 struct BloatCheckBar: View {
     @Environment(\.modelContext) private var modelContext
 
@@ -61,44 +61,9 @@ struct BloatCheckBar: View {
                     }
                 }
             }
-
-            label("BOWEL MOVEMENTS")
-            HStack(spacing: 14) {
-                Button { edit { $0.bowelCount = max($0.bowelCount - 1, 0) } } label: {
-                    Image(systemName: "minus.circle").font(.title3)
-                }
-                Text("\(check?.bowelCount ?? 0)")
-                    .font(.headline)
-                    .frame(minWidth: 24)
-                Button { edit { $0.bowelCount += 1 } } label: {
-                    Image(systemName: "plus.circle").font(.title3)
-                }
-                Spacer()
-                Menu {
-                    Picker("Type", selection: Binding(
-                        get: { check?.bowelType ?? 0 },
-                        set: { value in edit { $0.bowelType = value } }
-                    )) {
-                        Text("Not set").tag(0)
-                        ForEach(1...7, id: \.self) { type in
-                            Text("\(type) – \(DailyCheck.bristolNames[type] ?? "")").tag(type)
-                        }
-                    }
-                } label: {
-                    Text(typeText)
-                        .font(.footnote.weight(.semibold))
-                }
-            }
-            .buttonStyle(.borderless)
-            .tint(Theme.purple)
         }
         .padding(.horizontal)
         .padding(.bottom, 12)
-    }
-
-    private var typeText: String {
-        let type = check?.bowelType ?? 0
-        return type == 0 ? "Stool type" : "Type \(type) · \(DailyCheck.bristolNames[type] ?? "")"
     }
 
     private func label(_ text: String) -> some View {
@@ -161,7 +126,6 @@ struct BloatCheckBar: View {
             modelContext.insert(entry)
         }
         change(entry)
-        // Do not keep entries that hold nothing (e.g. bowel count tapped back to 0).
         if entry.isEmpty { modelContext.delete(entry) }
     }
 }

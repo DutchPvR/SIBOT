@@ -40,6 +40,8 @@ struct SIBOTApp: App {
             defaults.set(true, forKey: "seededSupplements")
         }
 
+        BowelMovement.migrateFromDailyChecks(context)
+
         let supplements = (try? context.fetch(FetchDescriptor<Supplement>())) ?? []
         NotificationManager.rescheduleAll(supplements)
     }

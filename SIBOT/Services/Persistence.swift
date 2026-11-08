@@ -5,7 +5,7 @@ import SwiftData
 enum Persistence {
     static let container: ModelContainer = {
         do {
-            return try ModelContainer(for: MealEntry.self, Supplement.self, SupplementLog.self, DailyCheck.self, FoodTrial.self)
+            return try ModelContainer(for: MealEntry.self, Supplement.self, SupplementLog.self, DailyCheck.self, FoodTrial.self, BowelMovement.self)
         } catch {
             fatalError("Could not create the SwiftData container: \(error)")
         }
