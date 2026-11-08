@@ -1,0 +1,96 @@
+name: TestFlight
+
+# Archives the app and uploads it to TestFlight.
+# Run it manually (Actions tab > TestFlight > Run workflow) or push a tag like v1.0.0.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_BASE64: ${{ secrets.ASC_KEY_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets are set
+        run: |
+          for v in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_BASE64; do
+            if [ -z "${!v}" ]; then echo "Missing secret for $v"; exit 1; fi
+          done
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen
+
+      - name: Write App Store Connect API key
+        run: |
+          mkdir -p "$RUNNER_TEMP/keys"
+          echo "$ASC_KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project SIBOT.xcodeproj \
+            -scheme SIBOT \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/SIBOT.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            | tee archive.log | tail -n 40
+
+      - name: Write export options
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          PLIST
+
+      - name: Export and upload to TestFlight
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/SIBOT.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            | tee export.log | tail -n 40
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testflight-logs
+          path: |
+            archive.log
+            export.log
+
+      - name: Remove API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"

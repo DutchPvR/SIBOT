@@ -45,6 +45,36 @@ Notes for the simulator:
 6. In App Store Connect open the app's **TestFlight** tab, add yourself as an internal tester, and install
    through the TestFlight app.
 
+## Automatic builds and TestFlight uploads (GitHub Actions)
+
+Two workflows live in `.github/workflows/`:
+
+- **Build** runs on every push to `main` and on pull requests. It compiles the app and widget for the
+  simulator so compile errors show up on GitHub. It needs no secrets.
+- **TestFlight** archives the app and uploads it to TestFlight. Run it from the repo's **Actions** tab
+  (TestFlight > Run workflow) or push a tag such as `v1.0.0`. Each run uses the run number as the build number.
+
+One-time setup for TestFlight:
+
+1. In App Store Connect, go to **Users and Access > Integrations > App Store Connect API** and create a key
+   with the **App Manager** role. Download the `.p8` file (you can only download it once) and note the
+   **Key ID** and **Issuer ID**.
+2. Create the app record in App Store Connect with bundle ID `com.dutchpvr.sibot`.
+3. In the repo go to **Settings > Secrets and variables > Actions** and add these secrets:
+
+| Secret | Value |
+| --- | --- |
+| `APPLE_TEAM_ID` | Your 10-character Team ID (developer.apple.com > Membership) |
+| `ASC_KEY_ID` | The API key's Key ID |
+| `ASC_ISSUER_ID` | The Issuer ID |
+| `ASC_KEY_BASE64` | The `.p8` file encoded as base64, e.g. `base64 -i AuthKey_XXXX.p8 \| pbcopy` on a Mac |
+
+4. Run the TestFlight workflow. After Apple finishes processing (a few minutes), the build appears in the
+   app's TestFlight tab.
+
+If signing fails on the App Group, register `group.com.dutchpvr.sibot` once at
+developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > App Groups, then re-run.
+
 ## Ask Claude (optional)
 
 In **Settings**, paste an Anthropic API key. It is stored in the iPhone Keychain and sent only to
