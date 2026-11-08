@@ -151,87 +151,55 @@ private struct FoodCheckContent: View {
     // MARK: - Cheat sheet
 
     // From the Cedars-Sinai "Low Fermentation Diet / SIBO Diet" handout (Mark Pimentel, M.D.).
+    // Short lines on purpose: readable at a glance. Search covers the details.
     private var cheatSheet: some View {
-        VStack(spacing: 14) {
-            sheetCard(
-                status: .safe,
-                title: "Good",
-                lines: [
-                    "All proteins: meat, fish, eggs",
-                    "Rice, potatoes, sweet potatoes",
-                    "White, sourdough, French or Italian bread, all pasta",
-                    "Anything grown under the ground: onion, garlic, carrots, beets",
-                    "Fruit vegetables: tomato, cucumber, peppers, zucchini, eggplant, peas",
-                    "Mushrooms",
-                    "All fruit except apples, pears and bananas",
-                    "Nuts and peanut butter, oils",
-                    "Lactaid milk, regular sugar, dark chocolate, NutraSweet"
-                ]
-            )
-
-            sheetCard(
-                status: .limit,
-                title: "Small amounts",
-                lines: [
-                    "Apples, pears, bananas",
-                    "Leafy greens or salad, as a side only",
-                    "Butter, hard aged cheese, milk chocolate",
-                    "Soda (check diet soda for Splenda)"
-                ]
-            )
-
-            sheetCard(
-                status: .avoid,
-                title: "Not good",
-                lines: [
-                    "Beans, lentils, chickpeas, hummus",
-                    "Broccoli, cauliflower, cabbage, Brussels sprouts",
-                    "Whole wheat and multigrain bread, oatmeal, added fiber",
-                    "Regular milk, cheese, yogurt, ice cream",
-                    "Splenda, sugar alcohols (-ol), gum, honey",
-                    "Probiotics"
-                ]
-            )
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("HOW TO EAT")
-                    .font(.caption.weight(.heavy))
-                    .tracking(1.5)
-                    .foregroundStyle(Theme.purple)
-                ForEach([
-                    "At least 4 hours between meals",
-                    "Don't snack, and don't eat right before bed",
-                    "Drink 5 to 8 cups of liquid a day"
-                ], id: \.self) { line in
-                    Hairline()
-                    Text(line)
-                        .font(.body.weight(.semibold))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 8)
+        VStack(alignment: .leading, spacing: 32) {
+            sheetSection(.safe, "Good", [
+                "Meat, fish, eggs",
+                "Rice, potatoes, pasta",
+                "White or sourdough bread",
+                "Onion, garlic, root vegetables",
+                "Tomato, cucumber, peppers, zucchini",
+                "Most fruit",
+                "Nuts, oils, sugar",
+                "Lactaid milk"
+            ])
+            sheetSection(.limit, "Small amounts", [
+                "Apples, pears, bananas",
+                "Side salad",
+                "Butter, hard cheese"
+            ])
+            sheetSection(.avoid, "Not good", [
+                "Beans, hummus",
+                "Broccoli, cabbage, cauliflower",
+                "Whole wheat, oatmeal",
+                "Milk, cheese, yogurt",
+                "Splenda, gum, honey",
+                "Probiotics"
+            ])
         }
+        .padding(.top, 8)
     }
 
-    private func sheetCard(status: FoodStatus, title: String, lines: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func sheetSection(_ status: FoodStatus, _ title: String, _ lines: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
-                StatusDot(status: status)
+                StatusDot(status: status, size: 10)
                 Text(title.uppercased())
-                    .font(.caption.weight(.heavy))
+                    .font(.footnote.weight(.heavy))
                     .tracking(1.5)
                     .foregroundStyle(status.color)
             }
+            .padding(.bottom, 10)
             ForEach(lines, id: \.self) { line in
                 Hairline()
                 Text(line)
-                    .font(.system(.body).weight(.semibold))
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(.title3)
+                    .padding(.vertical, 11)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            Hairline()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
     }
 
     // MARK: - Search results
