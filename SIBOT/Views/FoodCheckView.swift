@@ -10,6 +10,7 @@ struct FoodCheckView: View {
     @State private var showingLibrary = false
     @State private var libraryItem: PhotosPickerItem?
     @State private var scan: ScanImage?
+    @State private var cameraImage: UIImage?
 
     var body: some View {
         NavigationStack {
@@ -33,8 +34,12 @@ struct FoodCheckView: View {
                         .tint(Theme.purple)
                     }
                 }
-                .fullScreenCover(isPresented: $showingCamera) {
-                    CameraPicker { scan = ScanImage(image: $0) }
+                // Open the results only once the camera has fully closed.
+                .fullScreenCover(isPresented: $showingCamera, onDismiss: {
+                    if let image = cameraImage { scan = ScanImage(image: image) }
+                    cameraImage = nil
+                }) {
+                    CameraPicker { cameraImage = $0 }
                         .ignoresSafeArea()
                 }
                 .photosPicker(isPresented: $showingLibrary, selection: $libraryItem, matching: .images)
