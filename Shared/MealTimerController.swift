@@ -43,7 +43,7 @@ enum MealTimerController {
         center.removePendingNotificationRequests(withIdentifiers: [notificationID])
 
         let content = UNMutableNotificationContent()
-        content.title = "Fasting goal reached 🍽️"
+        content.title = "Fasting goal reached"
         let hoursText = hours == hours.rounded() ? String(Int(hours)) : String(format: "%.1f", hours)
         content.body = "Your \(hoursText)-hour gap is up."
         content.sound = .default

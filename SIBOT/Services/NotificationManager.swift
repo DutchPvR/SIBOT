@@ -68,7 +68,7 @@ enum NotificationManager {
 
     private static func content(for supplement: Supplement) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
-        content.title = "\(supplement.name) 💊"
+        content.title = supplement.name
         let dose = supplement.dose.trimmingCharacters(in: .whitespaces)
         content.body = dose.isEmpty
             ? "Time for your \(supplement.name). Did you take it?"
