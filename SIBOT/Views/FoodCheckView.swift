@@ -2,8 +2,8 @@ import PhotosUI
 import SwiftData
 import SwiftUI
 
-/// The Check tab: a quick cheat sheet by default. Pull down to reveal the search bar,
-/// which takes over the screen with results while you search.
+/// The Check tab: a search bar with the menu camera beside it, and the cheat sheet below.
+/// While you search, results replace the cheat sheet.
 struct FoodCheckView: View {
     @State private var query = ""
     @State private var showingCamera = false
@@ -11,29 +11,15 @@ struct FoodCheckView: View {
     @State private var libraryItem: PhotosPickerItem?
     @State private var scan: ScanImage?
     @State private var cameraImage: UIImage?
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         NavigationStack {
-            FoodCheckContent(query: query)
+            VStack(spacing: 0) {
+                searchRow
+                FoodCheckContent(query: query, isSearching: searchFocused)
+            }
                 .navigationTitle("Check")
-                .searchable(
-                    text: $query,
-                    placement: .navigationBarDrawer(displayMode: .automatic),
-                    prompt: "Search a food, e.g. oatmeal"
-                )
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                                Button("Take a photo of a menu") { showingCamera = true }
-                            }
-                            Button("Choose a menu photo") { showingLibrary = true }
-                        } label: {
-                            Image(systemName: "camera")
-                        }
-                        .tint(Theme.purple)
-                    }
-                }
                 // Open the results only once the camera has fully closed.
                 .fullScreenCover(isPresented: $showingCamera, onDismiss: {
                     if let image = cameraImage { scan = ScanImage(image: image) }
@@ -56,14 +42,65 @@ struct FoodCheckView: View {
                 .sheet(item: $scan) { MenuScanView(image: $0.image) }
         }
     }
+
+    private var searchRow: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Search a food, e.g. oatmeal", text: $query)
+                    .focused($searchFocused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                if !query.isEmpty {
+                    Button {
+                        query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear search")
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            Menu {
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button("Take a photo of a menu") { showingCamera = true }
+                }
+                Button("Choose a menu photo") { showingLibrary = true }
+            } label: {
+                Image(systemName: "camera")
+                    .font(.title3)
+                    .frame(width: 44, height: 44)
+            }
+            .tint(Theme.purple)
+            .accessibilityLabel("Scan a menu")
+
+            if searchFocused {
+                Button("Cancel") {
+                    query = ""
+                    searchFocused = false
+                }
+                .tint(Theme.purple)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 4)
+        .animation(.default, value: searchFocused)
+    }
 }
 
 private struct FoodCheckContent: View {
-    /// True while the search bar is active. Only works inside the view that has `.searchable`.
-    @Environment(\.isSearching) private var isSearching
     @Environment(\.modelContext) private var modelContext
 
     let query: String
+    /// True while the search field has the keyboard.
+    let isSearching: Bool
 
     @State private var aiVerdict: AIFoodVerdict?
     @State private var aiError: String?
