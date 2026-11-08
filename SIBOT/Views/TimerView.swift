@@ -93,17 +93,6 @@ struct TimerView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .tint(Theme.purple)
-
-            if startDate != nil {
-                Button("Clear timer", role: .destructive) {
-                    Task {
-                        await MealTimerController.stop()
-                        refresh()
-                    }
-                }
-                .font(.subheadline)
-                .padding(.vertical, 6)
-            }
         }
     }
 
