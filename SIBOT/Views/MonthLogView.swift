@@ -4,6 +4,7 @@ import SwiftUI
 struct MonthLogView: View {
     let anchor: Date
     let entries: [MealEntry]
+    let checks: [DailyCheck]
     let onSelectDay: (Date) -> Void
 
     private var calendar: Calendar { .current }
@@ -58,6 +59,20 @@ struct MonthLogView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.top, 6)
+
+                HStack(spacing: 14) {
+                    HStack(spacing: 4) {
+                        Circle().fill(Color.primary).frame(width: 8, height: 8)
+                        Text("Bloated")
+                    }
+                    HStack(spacing: 4) {
+                        Circle().strokeBorder(Color.primary, lineWidth: 1.5).frame(width: 8, height: 8)
+                        Text("No bloat")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 6)
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
@@ -68,6 +83,7 @@ struct MonthLogView: View {
         let meals = entries.filter { calendar.isDate($0.date, inSameDayAs: day) }
         let worst = meals.worstStatus
         let isToday = calendar.isDateInToday(day)
+        let check = checks.first { calendar.isDate($0.day, inSameDayAs: day) }
         let fill: Color = {
             guard let worst else { return Color.secondary.opacity(0.15) }
             return worst == .unknown ? Color.secondary.opacity(0.5) : worst.color
@@ -82,6 +98,16 @@ struct MonthLogView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
                 .background(fill, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .overlay(alignment: .bottom) {
+                    if let check {
+                        // Filled dot = bloated, ring = no bloat.
+                        Circle()
+                            .strokeBorder(worst == nil ? Color.primary : Color.white, lineWidth: 1.5)
+                            .background(Circle().fill(check.bloated ? (worst == nil ? Color.primary : Color.white) : Color.clear))
+                            .frame(width: 8, height: 8)
+                            .padding(.bottom, 5)
+                    }
+                }
                 .overlay(
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .stroke(isToday ? Theme.purple : .clear, lineWidth: 2.5)

@@ -8,10 +8,63 @@ struct DayLogView: View {
     let day: Date
     let meals: [MealEntry]
     let supplementLogs: [SupplementLog]
+    let check: DailyCheck?
 
     private var calendar: Calendar { .current }
 
     var body: some View {
+        VStack(spacing: 0) {
+            bloatBar
+            timeline
+        }
+    }
+
+    // MARK: - Daily bloat check
+
+    private var bloatBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("BELLY TODAY")
+                .font(.caption.weight(.heavy))
+                .tracking(1.5)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                bloatButton("No bloat", value: false, color: Theme.green)
+                bloatButton("Bloated", value: true, color: Theme.red)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 12)
+    }
+
+    private func bloatButton(_ title: String, value: Bool, color: Color) -> some View {
+        let selected = check?.bloated == value
+        return Button {
+            setBloat(value)
+        } label: {
+            Text(title)
+                .font(.subheadline.weight(.bold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(selected ? Color.white : color)
+                .background(selected ? color : color.opacity(0.10), in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Tap an answer to set it; tap it again to clear it.
+    private func setBloat(_ value: Bool) {
+        if let check {
+            if check.bloated == value {
+                modelContext.delete(check)
+            } else {
+                check.bloated = value
+            }
+        } else {
+            modelContext.insert(DailyCheck(day: day, bloated: value))
+        }
+    }
+
+    private var timeline: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {

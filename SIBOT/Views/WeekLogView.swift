@@ -4,6 +4,7 @@ import SwiftUI
 struct WeekLogView: View {
     let anchor: Date
     let entries: [MealEntry]
+    let checks: [DailyCheck]
     let onSelectDay: (Date) -> Void
 
     private var calendar: Calendar { .current }
@@ -30,6 +31,7 @@ struct WeekLogView: View {
         let meals = entries.filter { calendar.isDate($0.date, inSameDayAs: day) }
         let worst = meals.worstStatus
         let isToday = calendar.isDateInToday(day)
+        let check = checks.first { calendar.isDate($0.day, inSameDayAs: day) }
 
         return Button {
             onSelectDay(day)
@@ -66,6 +68,12 @@ struct WeekLogView: View {
                     }
                 }
                 Spacer(minLength: 0)
+                if let check {
+                    Text(check.bloated ? "BLOATED" : "NO BLOAT")
+                        .font(.system(size: 10, weight: .heavy))
+                        .tracking(0.8)
+                        .foregroundStyle(check.bloated ? Theme.red : Theme.green)
+                }
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)

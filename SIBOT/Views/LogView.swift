@@ -13,6 +13,7 @@ enum LogMode: String, CaseIterable, Identifiable {
 struct LogView: View {
     @Query(sort: \MealEntry.date) private var entries: [MealEntry]
     @Query(sort: \SupplementLog.date) private var supplementLogs: [SupplementLog]
+    @Query private var dailyChecks: [DailyCheck]
 
     @State private var mode: LogMode = .day
     @State private var selected = Date()
@@ -110,12 +111,13 @@ struct LogView: View {
             DayLogView(
                 day: selected,
                 meals: entries.filter { calendar.isDate($0.date, inSameDayAs: selected) },
-                supplementLogs: supplementLogs.filter { calendar.isDate($0.date, inSameDayAs: selected) }
+                supplementLogs: supplementLogs.filter { calendar.isDate($0.date, inSameDayAs: selected) },
+                check: dailyChecks.first { calendar.isDate($0.day, inSameDayAs: selected) }
             )
         case .week:
-            WeekLogView(anchor: selected, entries: entries, onSelectDay: openDay)
+            WeekLogView(anchor: selected, entries: entries, checks: dailyChecks, onSelectDay: openDay)
         case .month:
-            MonthLogView(anchor: selected, entries: entries, onSelectDay: openDay)
+            MonthLogView(anchor: selected, entries: entries, checks: dailyChecks, onSelectDay: openDay)
         }
     }
 
