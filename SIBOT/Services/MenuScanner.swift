@@ -46,7 +46,7 @@ enum MenuScanner {
         let reply = try await AIFoodChecker.send(messages: [
             ["role": "system", "content": prompt],
             ["role": "user", "content": userContent]
-        ], maxTokens: 400)
+        ], maxTokens: 900)
         return try parse(reply)
     }
 

@@ -9,6 +9,7 @@ enum AIFoodError: LocalizedError {
     case missingKey
     case badResponse(String)
     case offTopic
+    case reasoningRequired
     case tooLong
 
     var errorDescription: String? {
@@ -19,6 +20,8 @@ enum AIFoodError: LocalizedError {
             return detail
         case .offTopic:
             return "I can only judge foods and drinks for the SIBO diet. Try a food name or a simple meal."
+        case .reasoningRequired:
+            return "This model needs reasoning turned on."
         case .tooLong:
             return "That is too long. Enter just a food, drink or simple meal."
         }
@@ -73,53 +76,78 @@ enum AIFoodChecker {
         let text = try await send(messages: [
             ["role": "system", "content": systemPrompt],
             ["role": "user", "content": "<food>\(food)</food>"]
-        ], maxTokens: 80)
+        ], maxTokens: 200)
         let verdict = try parse(text)
         store(verdict, for: food)
         return verdict
     }
 
     /// One chat request to OpenRouter; returns the reply text.
+    /// Reasoning ("thinking") is switched off: these are simple lookups, and thinking tokens
+    /// are billed and can use up the whole reply budget, leaving an empty answer.
     static func send(messages: [[String: Any]], maxTokens: Int) async throws -> String {
+        do {
+            return try await request(messages: messages, maxTokens: maxTokens, disableReasoning: true)
+        } catch AIFoodError.reasoningRequired {
+            // Some models cannot turn thinking off; ask again with room for it, kept small.
+            return try await request(messages: messages, maxTokens: maxTokens * 4, disableReasoning: false)
+        }
+    }
+
+    private static func request(messages: [[String: Any]], maxTokens: Int, disableReasoning: Bool) async throws -> String {
         guard let key = Keychain.load(account: keyAccount), !key.isEmpty else {
             throw AIFoodError.missingKey
         }
         var request = URLRequest(url: URL(string: "https://openrouter.ai/api/v1/chat/completions")!)
         request.httpMethod = "POST"
-        request.timeoutInterval = 45
+        request.timeoutInterval = 60
         request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("SIBOT", forHTTPHeaderField: "X-Title")
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
             "temperature": 0,
             "messages": messages
         ]
+        body["reasoning"] = disableReasoning
+            ? ["effort": "none", "exclude": true]
+            : ["effort": "low", "exclude": true]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw AIFoodError.badResponse("No response from OpenRouter.")
         }
-        guard http.statusCode == 200 else {
+        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        let apiError = (json?["error"] as? [String: Any])?["message"] as? String
+
+        guard http.statusCode == 200, apiError == nil else {
+            if disableReasoning, let apiError, apiError.lowercased().contains("reason") {
+                throw AIFoodError.reasoningRequired
+            }
             switch http.statusCode {
             case 401:
                 throw AIFoodError.badResponse("OpenRouter rejected the API key. Check it in Settings.")
             case 402:
                 throw AIFoodError.badResponse("OpenRouter says your account is out of credits.")
-            case 400, 404:
-                throw AIFoodError.badResponse("OpenRouter could not use the model “\(model)”. Check the model in Settings.")
             default:
-                throw AIFoodError.badResponse("OpenRouter returned an error (\(http.statusCode)).")
+                throw AIFoodError.badResponse("OpenRouter: \(apiError ?? "error \(http.statusCode)")")
             }
         }
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let choices = json["choices"] as? [[String: Any]],
-              let message = choices.first?["message"] as? [String: Any],
-              let text = message["content"] as? String
-        else {
-            throw AIFoodError.badResponse("Could not read the AI's answer.")
+
+        let choice = (json?["choices"] as? [[String: Any]])?.first
+        let message = choice?["message"] as? [String: Any]
+        // Content is usually a string, but some providers send a list of text parts.
+        var text = message?["content"] as? String ?? ""
+        if text.isEmpty, let parts = message?["content"] as? [[String: Any]] {
+            text = parts.compactMap { $0["text"] as? String }.joined()
+        }
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if choice?["finish_reason"] as? String == "length" {
+                throw AIFoodError.badResponse("The AI ran out of room before answering. Try again, or pick another model in Settings.")
+            }
+            throw AIFoodError.badResponse("The AI sent an empty answer. Try again, or pick another model in Settings.")
         }
         return text
     }
