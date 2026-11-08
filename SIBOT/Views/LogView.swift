@@ -19,6 +19,7 @@ struct LogView: View {
     @State private var selected = Date()
     @State private var showingAdd = false
     @State private var addSeed = Date()
+    @State private var showingReports = false
 
     private var calendar: Calendar { .current }
 
@@ -39,6 +40,13 @@ struct LogView: View {
             }
             .navigationTitle("Log")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showingReports = true
+                    } label: {
+                        Image(systemName: "doc.text")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         addSeed = addDate
@@ -47,6 +55,9 @@ struct LogView: View {
                         Image(systemName: "plus.circle.fill")
                     }
                 }
+            }
+            .sheet(isPresented: $showingReports) {
+                ReportsView()
             }
             .sheet(isPresented: $showingAdd) {
                 AddMealSheet(initialDate: addSeed)

@@ -1,4 +1,6 @@
+import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @State private var gapHours = MealTimerStore.gapHours
@@ -6,6 +8,13 @@ struct SettingsView: View {
     @State private var keySaved = false
     @AppStorage(AIFoodChecker.modelDefaultsKey) private var aiModel = AIFoodChecker.defaultModel
     @FocusState private var fieldFocused: Bool
+    @Environment(\.modelContext) private var modelContext
+    @State private var backupDocument = BackupDocument(data: Data())
+    @State private var showingExporter = false
+    @State private var showingImporter = false
+    @State private var pendingRestore: URL?
+    @State private var backupMessage: String?
+    @AppStorage(BackupService.lastBackupKey) private var lastBackup: Double = 0
 
     var body: some View {
         NavigationStack {
@@ -56,6 +65,25 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Button("Back up to Files / iCloud Drive") {
+                        do {
+                            backupDocument = BackupDocument(data: try BackupService.makeData(context: modelContext))
+                            showingExporter = true
+                        } catch {
+                            backupMessage = "Could not make the backup: \(error.localizedDescription)"
+                        }
+                    }
+                    Button("Restore from a backup…") { showingImporter = true }
+                    if let backupMessage {
+                        Text(backupMessage).font(.footnote).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Backup")
+                } footer: {
+                    Text("Choose iCloud Drive in the Files picker to keep a copy in iCloud. Restoring replaces everything currently in the app.\(lastBackupText)")
+                }
+
+                Section {
                     Text(FoodDatabase.shared.source)
                         .font(.footnote)
                     Text("SIBOT is a personal tracking tool, not medical advice. Follow your doctor or dietitian's guidance.")
@@ -69,6 +97,38 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
+            .fileExporter(
+                isPresented: $showingExporter,
+                document: backupDocument,
+                contentType: .json,
+                defaultFilename: "SIBOT-backup-\(Date().formatted(.iso8601.year().month().day()))"
+            ) { result in
+                switch result {
+                case .success: backupMessage = "Backup saved."
+                case .failure(let error): backupMessage = "Backup failed: \(error.localizedDescription)"
+                }
+            }
+            .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json]) { result in
+                if case .success(let url) = result { pendingRestore = url }
+            }
+            .confirmationDialog(
+                "Replace everything in the app with this backup?",
+                isPresented: Binding(get: { pendingRestore != nil }, set: { if !$0 { pendingRestore = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button("Restore", role: .destructive) {
+                    if let url = pendingRestore {
+                        do {
+                            try BackupService.restore(from: url, context: modelContext)
+                            backupMessage = "Backup restored."
+                        } catch {
+                            backupMessage = "Could not restore: \(error.localizedDescription)"
+                        }
+                    }
+                    pendingRestore = nil
+                }
+                Button("Cancel", role: .cancel) { pendingRestore = nil }
+            }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -105,6 +165,11 @@ struct SettingsView: View {
                 }
             }
         )
+    }
+
+    private var lastBackupText: String {
+        guard lastBackup > 0 else { return " No backup yet." }
+        return " Last backup: \(Date(timeIntervalSince1970: lastBackup).formatted(date: .abbreviated, time: .shortened))."
     }
 
     private var gapText: String {
