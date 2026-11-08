@@ -54,17 +54,6 @@ private struct FoodCheckContent: View {
             aiError = nil
             loggedMessage = nil
         }
-        // Nothing on the list? Check with the AI automatically once you stop typing.
-        // The task restarts (and the old one is cancelled) every time the text changes.
-        .task(id: trimmed) {
-            guard trimmed.count >= 3, FoodDatabase.shared.search(trimmed).isEmpty else { return }
-            do {
-                try await Task.sleep(nanoseconds: 700_000_000)
-            } catch {
-                return // text changed during the pause
-            }
-            await ask()
-        }
     }
 
     // MARK: - Cheat sheet
