@@ -1,0 +1,63 @@
+name: SIBOT
+options:
+  bundleIdPrefix: com.dutchpvr
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Set this to your Apple Developer Team ID once your membership is active
+    # (Xcode > Signing & Capabilities will also fill it in for you).
+    DEVELOPMENT_TEAM: ""
+targets:
+  SIBOT:
+    type: application
+    platform: iOS
+    sources:
+      - SIBOT
+      - Shared
+    info:
+      path: SIBOT/Info.plist
+      properties:
+        CFBundleDisplayName: SIBOT
+        UILaunchScreen: {}
+        NSSupportsLiveActivities: true
+        ITSAppUsesNonExemptEncryption: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    entitlements:
+      path: SIBOT/SIBOT.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.dutchpvr.sibot
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dutchpvr.sibot
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: SIBOTWidget
+  SIBOTWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - SIBOTWidget
+      - Shared
+    info:
+      path: SIBOTWidget/Info.plist
+      properties:
+        CFBundleDisplayName: SIBOT Timer
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: SIBOTWidget/SIBOTWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.dutchpvr.sibot
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dutchpvr.sibot.widget
+        TARGETED_DEVICE_FAMILY: "1"

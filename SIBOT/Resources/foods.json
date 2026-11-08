@@ -1,0 +1,788 @@
+{
+  "source": "Starter list based on summaries of the Cedars-Sinai low fermentation diet. Replace or edit to match your own guide.",
+  "foods": [
+    {
+      "name": "Chicken",
+      "aliases": [
+        "poultry"
+      ],
+      "status": "safe",
+      "note": "Plain proteins are fine. Watch marinades and breading."
+    },
+    {
+      "name": "Turkey",
+      "aliases": [],
+      "status": "safe",
+      "note": "Plain proteins are fine."
+    },
+    {
+      "name": "Beef",
+      "aliases": [
+        "steak",
+        "ground beef",
+        "hamburger"
+      ],
+      "status": "safe",
+      "note": "Plain proteins are fine."
+    },
+    {
+      "name": "Pork",
+      "aliases": [
+        "pork chop"
+      ],
+      "status": "safe",
+      "note": "Plain proteins are fine."
+    },
+    {
+      "name": "Lamb",
+      "aliases": [],
+      "status": "safe",
+      "note": "Plain proteins are fine."
+    },
+    {
+      "name": "Fish",
+      "aliases": [],
+      "status": "safe",
+      "note": "Plain proteins are fine."
+    },
+    {
+      "name": "Salmon",
+      "aliases": [],
+      "status": "safe",
+      "note": "Plain proteins are fine."
+    },
+    {
+      "name": "Tuna",
+      "aliases": [],
+      "status": "safe",
+      "note": "Plain proteins are fine."
+    },
+    {
+      "name": "Shrimp",
+      "aliases": [
+        "prawns",
+        "seafood"
+      ],
+      "status": "safe",
+      "note": "Plain proteins are fine."
+    },
+    {
+      "name": "Eggs",
+      "aliases": [
+        "egg",
+        "omelet",
+        "omelette",
+        "scrambled eggs"
+      ],
+      "status": "safe",
+      "note": "Fine on this diet."
+    },
+    {
+      "name": "Bacon",
+      "aliases": [],
+      "status": "safe",
+      "note": "Fine if it has no added sugar alcohols or high-fructose corn syrup."
+    },
+    {
+      "name": "Organ meats",
+      "aliases": [
+        "liver"
+      ],
+      "status": "safe",
+      "note": "Fine on this diet."
+    },
+    {
+      "name": "Tofu",
+      "aliases": [
+        "tempeh"
+      ],
+      "status": "limit",
+      "note": "Soy beans are legumes, but sources disagree about tofu. Check your guide."
+    },
+    {
+      "name": "White rice",
+      "aliases": [
+        "rice",
+        "jasmine rice",
+        "sushi rice"
+      ],
+      "status": "safe",
+      "note": "Simple carbs like white rice are the best choice. One serving per meal."
+    },
+    {
+      "name": "Brown rice",
+      "aliases": [],
+      "status": "avoid",
+      "note": "Whole grains are higher in fermentable fiber."
+    },
+    {
+      "name": "Potatoes",
+      "aliases": [
+        "potato",
+        "mashed potatoes",
+        "french fries",
+        "baked potato"
+      ],
+      "status": "safe",
+      "note": "Simple starch. One serving per meal."
+    },
+    {
+      "name": "Sweet potatoes",
+      "aliases": [
+        "sweet potato",
+        "yam"
+      ],
+      "status": "safe",
+      "note": "Simple starch. One serving per meal."
+    },
+    {
+      "name": "White bread",
+      "aliases": [
+        "bread",
+        "toast",
+        "sourdough",
+        "french bread",
+        "italian bread",
+        "potato bread"
+      ],
+      "status": "safe",
+      "note": "White, sourdough, French and potato breads are fine."
+    },
+    {
+      "name": "Whole wheat bread",
+      "aliases": [
+        "multigrain bread",
+        "whole grain bread",
+        "wheat bread"
+      ],
+      "status": "avoid",
+      "note": "Avoid whole wheat and multigrain."
+    },
+    {
+      "name": "Pasta",
+      "aliases": [
+        "spaghetti",
+        "noodles",
+        "macaroni"
+      ],
+      "status": "safe",
+      "note": "White-flour or rice pasta is fine. One serving per meal."
+    },
+    {
+      "name": "Corn flakes",
+      "aliases": [
+        "cornflakes",
+        "rice krispies",
+        "cereal"
+      ],
+      "status": "safe",
+      "note": "Refined cereals are fine. Check for added fiber or sugar alcohols."
+    },
+    {
+      "name": "Oats",
+      "aliases": [
+        "oatmeal",
+        "granola",
+        "porridge"
+      ],
+      "status": "avoid",
+      "note": "Higher in fermentable fiber."
+    },
+    {
+      "name": "Bran",
+      "aliases": [
+        "wheat bran",
+        "barley"
+      ],
+      "status": "avoid",
+      "note": "Avoid high-fiber grains."
+    },
+    {
+      "name": "Quinoa",
+      "aliases": [
+        "couscous",
+        "polenta"
+      ],
+      "status": "limit",
+      "note": "Sources list these as allowed but they are less simple than white rice. Keep portions small."
+    },
+    {
+      "name": "Rye bread",
+      "aliases": [
+        "rye"
+      ],
+      "status": "limit",
+      "note": "Sources disagree. Check your guide."
+    },
+    {
+      "name": "Olive oil",
+      "aliases": [
+        "oil",
+        "cooking oil",
+        "avocado oil",
+        "coconut oil",
+        "vegetable oil"
+      ],
+      "status": "safe",
+      "note": "Oils are fine."
+    },
+    {
+      "name": "Butter",
+      "aliases": [
+        "ghee"
+      ],
+      "status": "safe",
+      "note": "Fine in normal amounts."
+    },
+    {
+      "name": "Avocado",
+      "aliases": [],
+      "status": "limit",
+      "note": "Not clearly covered. Contains polyols, so keep to a small portion."
+    },
+    {
+      "name": "Carrots",
+      "aliases": [
+        "carrot"
+      ],
+      "status": "safe",
+      "note": "Root vegetables are fine."
+    },
+    {
+      "name": "Beets",
+      "aliases": [
+        "beet",
+        "beetroot"
+      ],
+      "status": "safe",
+      "note": "Root vegetables are fine."
+    },
+    {
+      "name": "Turnips",
+      "aliases": [
+        "turnip",
+        "parsnip",
+        "parsnips"
+      ],
+      "status": "safe",
+      "note": "Root vegetables are fine."
+    },
+    {
+      "name": "Cucumber",
+      "aliases": [
+        "cucumbers"
+      ],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Tomato",
+      "aliases": [
+        "tomatoes",
+        "tomato sauce"
+      ],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Zucchini",
+      "aliases": [
+        "squash",
+        "summer squash",
+        "butternut squash"
+      ],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Bell pepper",
+      "aliases": [
+        "peppers",
+        "pepper",
+        "capsicum"
+      ],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Eggplant",
+      "aliases": [
+        "aubergine"
+      ],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Green beans",
+      "aliases": [
+        "string beans"
+      ],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Corn",
+      "aliases": [
+        "sweet corn"
+      ],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Mushrooms",
+      "aliases": [
+        "mushroom"
+      ],
+      "status": "safe",
+      "note": "Allowed on this diet, though they are higher in polyols. Start small."
+    },
+    {
+      "name": "Olives",
+      "aliases": [],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Onion",
+      "aliases": [
+        "onions",
+        "shallot",
+        "shallots"
+      ],
+      "status": "limit",
+      "note": "Allowed in small, cooked amounts. Sources differ."
+    },
+    {
+      "name": "Garlic",
+      "aliases": [],
+      "status": "limit",
+      "note": "Allowed in small, cooked amounts. Sources differ."
+    },
+    {
+      "name": "Leek",
+      "aliases": [
+        "leeks"
+      ],
+      "status": "limit",
+      "note": "Small, cooked amounts."
+    },
+    {
+      "name": "Celery",
+      "aliases": [],
+      "status": "limit",
+      "note": "Small amounts, best used to flavor food."
+    },
+    {
+      "name": "Spinach",
+      "aliases": [
+        "kale",
+        "arugula",
+        "swiss chard"
+      ],
+      "status": "limit",
+      "note": "Leafy greens only as a side portion, never the whole meal."
+    },
+    {
+      "name": "Lettuce",
+      "aliases": [
+        "salad",
+        "romaine",
+        "mixed greens",
+        "side salad"
+      ],
+      "status": "limit",
+      "note": "Salad only as a small side."
+    },
+    {
+      "name": "Green peas",
+      "aliases": [
+        "peas",
+        "english peas"
+      ],
+      "status": "limit",
+      "note": "Allowed by some sources. Keep portions small."
+    },
+    {
+      "name": "Broccoli",
+      "aliases": [],
+      "status": "avoid",
+      "note": "Cruciferous vegetables are avoided on this diet."
+    },
+    {
+      "name": "Cauliflower",
+      "aliases": [],
+      "status": "avoid",
+      "note": "Cruciferous vegetables are avoided on this diet."
+    },
+    {
+      "name": "Cabbage",
+      "aliases": [
+        "coleslaw",
+        "sauerkraut"
+      ],
+      "status": "avoid",
+      "note": "Cruciferous vegetables are avoided on this diet."
+    },
+    {
+      "name": "Brussels sprouts",
+      "aliases": [],
+      "status": "avoid",
+      "note": "Cruciferous vegetables are avoided on this diet."
+    },
+    {
+      "name": "Asparagus",
+      "aliases": [],
+      "status": "avoid",
+      "note": "Listed as a vegetable to avoid by several sources."
+    },
+    {
+      "name": "Beans",
+      "aliases": [
+        "black beans",
+        "kidney beans",
+        "pinto beans",
+        "baked beans",
+        "white beans",
+        "refried beans"
+      ],
+      "status": "avoid",
+      "note": "Beans and legumes are avoided."
+    },
+    {
+      "name": "Chickpeas",
+      "aliases": [
+        "garbanzo",
+        "hummus",
+        "falafel"
+      ],
+      "status": "avoid",
+      "note": "Hummus and chickpeas are specifically called out as avoid."
+    },
+    {
+      "name": "Lentils",
+      "aliases": [
+        "split peas",
+        "dal",
+        "dhal"
+      ],
+      "status": "avoid",
+      "note": "Beans and legumes are avoided."
+    },
+    {
+      "name": "Peanuts",
+      "aliases": [
+        "peanut butter"
+      ],
+      "status": "limit",
+      "note": "A legume, but often grouped with nuts. Check your guide."
+    },
+    {
+      "name": "Strawberries",
+      "aliases": [
+        "strawberry"
+      ],
+      "status": "safe",
+      "note": "Fruit is fine, one serving at a time."
+    },
+    {
+      "name": "Blueberries",
+      "aliases": [
+        "blueberry",
+        "raspberries",
+        "raspberry"
+      ],
+      "status": "safe",
+      "note": "One serving at a time."
+    },
+    {
+      "name": "Oranges",
+      "aliases": [
+        "orange",
+        "tangerine",
+        "clementine",
+        "grapefruit"
+      ],
+      "status": "safe",
+      "note": "One serving at a time."
+    },
+    {
+      "name": "Lemon",
+      "aliases": [
+        "lime",
+        "lemon juice",
+        "lime juice"
+      ],
+      "status": "safe",
+      "note": "Fine."
+    },
+    {
+      "name": "Grapes",
+      "aliases": [],
+      "status": "safe",
+      "note": "One serving at a time."
+    },
+    {
+      "name": "Pineapple",
+      "aliases": [
+        "papaya",
+        "kiwi"
+      ],
+      "status": "safe",
+      "note": "One serving at a time."
+    },
+    {
+      "name": "Cantaloupe",
+      "aliases": [
+        "honeydew",
+        "melon"
+      ],
+      "status": "safe",
+      "note": "One serving at a time."
+    },
+    {
+      "name": "Banana",
+      "aliases": [
+        "bananas"
+      ],
+      "status": "limit",
+      "note": "Limit. Ripe bananas are more fermentable."
+    },
+    {
+      "name": "Apple",
+      "aliases": [
+        "apples",
+        "applesauce",
+        "apple juice"
+      ],
+      "status": "limit",
+      "note": "Limit. Higher in fructose and polyols."
+    },
+    {
+      "name": "Pear",
+      "aliases": [
+        "pears"
+      ],
+      "status": "limit",
+      "note": "Limit. Higher in fructose and polyols."
+    },
+    {
+      "name": "Dried fruit",
+      "aliases": [
+        "raisins",
+        "dates",
+        "figs",
+        "prunes",
+        "dried apricots",
+        "cranberries dried"
+      ],
+      "status": "avoid",
+      "note": "Dried fruit is avoided, even from an allowed fruit."
+    },
+    {
+      "name": "Lactose-free milk",
+      "aliases": [
+        "lactaid",
+        "lactaid milk"
+      ],
+      "status": "safe",
+      "note": "Lactose-free milk is the recommended dairy."
+    },
+    {
+      "name": "Milk",
+      "aliases": [
+        "whole milk",
+        "skim milk",
+        "2% milk",
+        "cream"
+      ],
+      "status": "avoid",
+      "note": "Regular milk contains lactose."
+    },
+    {
+      "name": "Yogurt",
+      "aliases": [
+        "greek yogurt",
+        "kefir"
+      ],
+      "status": "avoid",
+      "note": "Yogurt and other probiotic foods are avoided, even lactose-free."
+    },
+    {
+      "name": "Hard cheese",
+      "aliases": [
+        "cheddar",
+        "parmesan",
+        "swiss cheese",
+        "aged cheese",
+        "gouda"
+      ],
+      "status": "safe",
+      "note": "Aged hard cheeses are low in lactose."
+    },
+    {
+      "name": "Soft cheese",
+      "aliases": [
+        "cottage cheese",
+        "ricotta",
+        "cream cheese",
+        "mozzarella fresh",
+        "brie"
+      ],
+      "status": "avoid",
+      "note": "Fresh and soft cheeses are higher in lactose."
+    },
+    {
+      "name": "Ice cream",
+      "aliases": [
+        "custard",
+        "milkshake"
+      ],
+      "status": "avoid",
+      "note": "Contains lactose."
+    },
+    {
+      "name": "Sour cream",
+      "aliases": [],
+      "status": "limit",
+      "note": "Contains some lactose. Small amounts only."
+    },
+    {
+      "name": "Sugar",
+      "aliases": [
+        "white sugar",
+        "table sugar",
+        "cane sugar",
+        "glucose",
+        "dextrose",
+        "cake",
+        "cookies"
+      ],
+      "status": "safe",
+      "note": "Regular sugar is fine on this diet."
+    },
+    {
+      "name": "Dark chocolate",
+      "aliases": [
+        "chocolate"
+      ],
+      "status": "safe",
+      "note": "Chocolate is allowed, but watch for milk chocolate."
+    },
+    {
+      "name": "Milk chocolate",
+      "aliases": [],
+      "status": "limit",
+      "note": "Contains lactose."
+    },
+    {
+      "name": "Honey",
+      "aliases": [
+        "agave"
+      ],
+      "status": "limit",
+      "note": "High in fructose. Limit."
+    },
+    {
+      "name": "Aspartame",
+      "aliases": [
+        "nutrasweet",
+        "equal"
+      ],
+      "status": "safe",
+      "note": "Not a sugar, so it is not fermented. Allowed on this diet."
+    },
+    {
+      "name": "Sucralose",
+      "aliases": [
+        "splenda"
+      ],
+      "status": "avoid",
+      "note": "Non-absorbed sweeteners are avoided."
+    },
+    {
+      "name": "Sorbitol",
+      "aliases": [
+        "xylitol",
+        "mannitol",
+        "maltitol",
+        "erythritol",
+        "sugar alcohol",
+        "sugar free gum",
+        "gum"
+      ],
+      "status": "avoid",
+      "note": "Sugar alcohols are avoided."
+    },
+    {
+      "name": "High-fructose corn syrup",
+      "aliases": [
+        "hfcs",
+        "corn syrup"
+      ],
+      "status": "avoid",
+      "note": "Avoid."
+    },
+    {
+      "name": "Almonds",
+      "aliases": [
+        "walnuts",
+        "pecans",
+        "nuts",
+        "cashews",
+        "pistachios",
+        "macadamia"
+      ],
+      "status": "safe",
+      "note": "Nuts are allowed. Watch portion size."
+    },
+    {
+      "name": "Chia seeds",
+      "aliases": [
+        "flax seeds",
+        "flaxseed",
+        "chia",
+        "flax"
+      ],
+      "status": "avoid",
+      "note": "Avoid."
+    },
+    {
+      "name": "Water",
+      "aliases": [
+        "sparkling water",
+        "seltzer"
+      ],
+      "status": "safe",
+      "note": "Drink plenty."
+    },
+    {
+      "name": "Coffee",
+      "aliases": [
+        "tea",
+        "black coffee"
+      ],
+      "status": "limit",
+      "note": "Not clearly covered in the sources I found. Check your guide."
+    },
+    {
+      "name": "Kombucha",
+      "aliases": [
+        "probiotic",
+        "probiotics",
+        "fermented food",
+        "kimchi"
+      ],
+      "status": "avoid",
+      "note": "Probiotic and fermented foods are avoided."
+    },
+    {
+      "name": "Diet soda",
+      "aliases": [
+        "soda",
+        "pop"
+      ],
+      "status": "avoid",
+      "note": "Check for sucralose, sugar alcohols or high-fructose corn syrup."
+    }
+  ]
+}
