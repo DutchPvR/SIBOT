@@ -1,30 +1,9 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage("gingerEnabled") private var gingerEnabled = true
-    @AppStorage("gingerMinutes") private var gingerMinutes = 22 * 60
-
     @State private var gapHours = MealTimerStore.gapHours
     @State private var apiKey = Keychain.load(account: AIFoodChecker.keyAccount) ?? ""
     @State private var keySaved = false
-
-    private var gingerTime: Binding<Date> {
-        Binding(
-            get: {
-                Calendar.current.date(
-                    bySettingHour: gingerMinutes / 60,
-                    minute: gingerMinutes % 60,
-                    second: 0,
-                    of: Date()
-                ) ?? Date()
-            },
-            set: { newValue in
-                let parts = Calendar.current.dateComponents([.hour, .minute], from: newValue)
-                gingerMinutes = (parts.hour ?? 22) * 60 + (parts.minute ?? 0)
-                applyGinger()
-            }
-        )
-    }
 
     var body: some View {
         NavigationStack {
@@ -40,16 +19,6 @@ struct SettingsView: View {
                     Text("Meal timer")
                 } footer: {
                     Text("Default is 5 hours. Changes apply the next time you start the timer.")
-                }
-
-                Section {
-                    Toggle("Bedtime ginger reminder", isOn: $gingerEnabled)
-                        .onChange(of: gingerEnabled) { _, _ in applyGinger() }
-                    if gingerEnabled {
-                        DatePicker("Remind me at", selection: gingerTime, displayedComponents: .hourAndMinute)
-                    }
-                } header: {
-                    Text("Ginger pills")
                 }
 
                 Section {
@@ -88,11 +57,4 @@ struct SettingsView: View {
         gapHours == gapHours.rounded() ? String(Int(gapHours)) : String(format: "%.1f", gapHours)
     }
 
-    private func applyGinger() {
-        if gingerEnabled {
-            NotificationManager.scheduleGinger(hour: gingerMinutes / 60, minute: gingerMinutes % 60)
-        } else {
-            NotificationManager.cancelGinger()
-        }
-    }
 }

@@ -6,7 +6,7 @@ A personal iPhone app for following the Cedars-Sinai low-fermentation diet for S
 - **Meal log** with a 14-day chart and an optional 1-5 symptom rating per meal.
 - **Meal timer** (default 5 hours, adjustable) that you start manually, with a notification when it ends.
 - **Home screen widget + Live Activity** to start and watch the countdown.
-- **Bedtime ginger reminder** at a time you choose in Settings.
+- **Reminders tab** for supplements (ginger pills are set up for you at 10 PM). Pick the time and days for each one, then log Taken or Skipped from the app or straight from the notification. A history list keeps the record.
 
 SIBOT is a personal tracking tool, not medical advice. The starter food list in
 `SIBOT/Resources/foods.json` is based on summaries of the Cedars-Sinai guide. Check it against your own
@@ -27,7 +27,7 @@ open SIBOT.xcodeproj
 In Xcode choose an iPhone simulator (iOS 17+) and press Run.
 
 Notes for the simulator:
-- Allow notifications when asked. The ginger reminder and the end-of-timer alert use them.
+- Allow notifications when asked. Supplement reminders and the end-of-timer alert use them. In the simulator, long-press a notification banner to see the Taken / Skipped buttons.
 - Add the widget by long-pressing the home screen, tapping **+**, and searching "SIBOT".
 - For a quick test, set the wait to 1 hour in Settings (the stepper's minimum) and watch the countdown.
 

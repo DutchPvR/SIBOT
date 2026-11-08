@@ -8,24 +8,33 @@ struct SIBOTApp: App {
 
     init() {
         UNUserNotificationCenter.current().delegate = notificationDelegate
+        NotificationManager.registerCategories()
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .task {
-                    _ = await NotificationManager.requestAuthorization()
-                    let defaults = UserDefaults.standard
-                    if defaults.object(forKey: "gingerEnabled") == nil {
-                        defaults.set(true, forKey: "gingerEnabled")
-                        defaults.set(22 * 60, forKey: "gingerMinutes")
-                    }
-                    if defaults.bool(forKey: "gingerEnabled") {
-                        let minutes = defaults.integer(forKey: "gingerMinutes")
-                        NotificationManager.scheduleGinger(hour: minutes / 60, minute: minutes % 60)
-                    }
-                }
+                .task { await setUpReminders() }
         }
-        .modelContainer(for: MealEntry.self)
+        .modelContainer(Persistence.container)
+    }
+
+    @MainActor
+    private func setUpReminders() async {
+        _ = await NotificationManager.requestAuthorization()
+        NotificationManager.cancelLegacyGinger()
+
+        let context = Persistence.container.mainContext
+        let defaults = UserDefaults.standard
+
+        // First launch: start with a nightly ginger reminder at 10 PM. Edit or delete it in the Reminders tab.
+        if !defaults.bool(forKey: "seededSupplements") {
+            context.insert(Supplement(name: "Ginger pills", minutes: 22 * 60))
+            try? context.save()
+            defaults.set(true, forKey: "seededSupplements")
+        }
+
+        let supplements = (try? context.fetch(FetchDescriptor<Supplement>())) ?? []
+        NotificationManager.rescheduleAll(supplements)
     }
 }
