@@ -7,15 +7,15 @@ struct MealTimerEntry: TimelineEntry {
     let startDate: Date?
     let endDate: Date?
 
-    var isWaiting: Bool {
+    var goalReached: Bool {
         guard let endDate else { return false }
-        return endDate > date
+        return date >= endDate
     }
 }
 
 struct MealTimerProvider: TimelineProvider {
     func placeholder(in context: Context) -> MealTimerEntry {
-        MealTimerEntry(date: Date(), startDate: Date(), endDate: Date().addingTimeInterval(3 * 3600))
+        MealTimerEntry(date: Date(), startDate: Date().addingTimeInterval(-3 * 3600), endDate: Date().addingTimeInterval(2 * 3600))
     }
 
     func getSnapshot(in context: Context, completion: @escaping (MealTimerEntry) -> Void) {
@@ -24,8 +24,8 @@ struct MealTimerProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<MealTimerEntry>) -> Void) {
         let entry = currentEntry()
-        if entry.isWaiting, let end = entry.endDate {
-            // Reload when the countdown finishes so the widget flips to "You can eat".
+        if let end = entry.endDate, end > entry.date {
+            // The counter runs on its own. Reload at the goal so the color can switch.
             completion(Timeline(entries: [entry], policy: .after(end)))
         } else {
             completion(Timeline(entries: [entry], policy: .never))
@@ -54,49 +54,47 @@ struct MealTimerWidgetView: View {
         }
     }
 
+    private var timerColor: Color { entry.goalReached ? mint : orange }
+
     private var homeView: some View {
         VStack(spacing: 8) {
-            if entry.isWaiting, let start = entry.startDate, let end = entry.endDate {
-                Text("⏳ Wait")
+            if let start = entry.startDate {
+                Text("Since last meal")
                     .font(.system(.caption, design: .rounded).weight(.bold))
-                    .foregroundStyle(orange)
-                Text(timerInterval: start...end, countsDown: true)
+                    .foregroundStyle(.secondary)
+                // .timer style counts up from a past date and keeps going.
+                Text(start, style: .timer)
                     .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .monospacedDigit()
-                    .foregroundStyle(grape)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+                    .foregroundStyle(timerColor)
                     .multilineTextAlignment(.center)
-                Button(intent: StopMealTimerIntent()) {
-                    Text("Reset")
-                        .font(.system(.caption, design: .rounded).weight(.semibold))
-                }
-                .buttonStyle(.bordered)
-                .tint(grape)
             } else {
-                Text("🍽️ You can eat")
+                Text("🍽️ No meal yet")
                     .font(.system(.headline, design: .rounded).weight(.heavy))
-                    .foregroundStyle(mint)
                     .multilineTextAlignment(.center)
-                Button(intent: StartMealTimerIntent()) {
-                    Text("Start timer")
-                        .font(.system(.subheadline, design: .rounded).weight(.bold))
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(grape)
             }
+            Button(intent: StartMealTimerIntent()) {
+                Text("I just ate")
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(grape)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var lockScreenView: some View {
         VStack(alignment: .leading) {
-            if entry.isWaiting, let start = entry.startDate, let end = entry.endDate {
-                Text("Next meal in")
+            if let start = entry.startDate {
+                Text("Since last meal")
                     .font(.caption)
-                Text(timerInterval: start...end, countsDown: true)
+                Text(start, style: .timer)
                     .font(.system(.title2, design: .rounded).weight(.bold))
                     .monospacedDigit()
             } else {
-                Text("🍽️ You can eat")
+                Text("🍽️ No meal yet")
                     .font(.headline)
             }
         }
@@ -121,8 +119,8 @@ struct MealTimerWidget: Widget {
                     )
                 }
         }
-        .configurationDisplayName("Meal timer")
-        .description("Start the wait between meals and watch it count down.")
+        .configurationDisplayName("Fasting timer")
+        .description("Shows how long it has been since your last meal. Tap to restart it.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
     }
 }

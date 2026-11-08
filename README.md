@@ -4,8 +4,8 @@ A personal iPhone app for following the Cedars-Sinai low-fermentation diet for S
 
 - **Can I eat this?** Search a bundled food list (Safe / Limit / Avoid). For foods not on the list, optionally ask an AI model (clearly labeled as an AI guess).
 - **Meal log** with a 14-day chart and an optional 1-5 symptom rating per meal.
-- **Meal timer** (default 5 hours, adjustable) that you start manually, with a notification when it ends.
-- **Home screen widget + Live Activity** to start and watch the countdown.
+- **Fasting timer** that counts up from your last meal (tap "I just ate" to restart it). A goal gap (default 5 hours, adjustable) turns it green and sends a notification.
+- **Home screen widget + Live Activity** that show the count-up and let you restart it.
 - **Reminders tab** for supplements (ginger pills are set up for you at 10 PM). Pick the time and days for each one, then log Taken or Skipped from the app or straight from the notification. A history list keeps the record.
 
 SIBOT is a personal tracking tool, not medical advice. The starter food list in

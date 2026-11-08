@@ -7,16 +7,22 @@ import WidgetKit
 enum MealTimerController {
     static let notificationID = "mealTimerDone"
 
-    static func start() async {
+    /// Marks "I just ate" (or ate at `date`): the fasting timer counts up from there.
+    /// The goal gap only drives the "you can eat" notification and the color change.
+    static func start(at date: Date = Date()) async {
         let gap = MealTimerStore.gapHours
-        let now = Date()
-        let end = now.addingTimeInterval(gap * 3600)
+        let end = date.addingTimeInterval(gap * 3600)
 
-        MealTimerStore.startDate = now
+        MealTimerStore.startDate = date
         MealTimerStore.endDate = end
 
-        await scheduleNotification(after: gap * 3600, hours: gap)
-        await restartActivity(start: now, end: end)
+        if end > Date() {
+            await scheduleNotification(after: end.timeIntervalSinceNow, hours: gap)
+        } else {
+            UNUserNotificationCenter.current()
+                .removePendingNotificationRequests(withIdentifiers: [notificationID])
+        }
+        await restartActivity(start: date, end: end)
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -37,7 +43,7 @@ enum MealTimerController {
         center.removePendingNotificationRequests(withIdentifiers: [notificationID])
 
         let content = UNMutableNotificationContent()
-        content.title = "You can eat now 🍽️"
+        content.title = "Fasting goal reached 🍽️"
         let hoursText = hours == hours.rounded() ? String(Int(hours)) : String(format: "%.1f", hours)
         content.body = "Your \(hoursText)-hour gap is up."
         content.sound = .default

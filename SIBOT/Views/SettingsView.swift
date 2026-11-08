@@ -12,15 +12,15 @@ struct SettingsView: View {
             Form {
                 Section {
                     Stepper(value: $gapHours, in: 1...8, step: 0.5) {
-                        Text("Wait between meals: \(gapText) h")
+                        Text("Goal between meals: \(gapText) h")
                     }
                     .onChange(of: gapHours) { _, newValue in
                         MealTimerStore.gapHours = newValue
                     }
                 } header: {
-                    Text("Meal timer")
+                    Text("Fasting timer")
                 } footer: {
-                    Text("Default is 5 hours. Changes apply the next time you start the timer.")
+                    Text("The timer counts up from your last meal. The goal turns it green and sends a \"you can eat\" notification. Default is 5 hours. Changes apply the next time you tap \"I just ate\".")
                 }
 
                 Section {

@@ -1,6 +1,7 @@
 import Combine
 import SwiftUI
 
+/// Fasting timer: counts UP from your last meal so you can see how long it has been.
 struct TimerView: View {
     @State private var startDate: Date? = MealTimerStore.startDate
     @State private var endDate: Date? = MealTimerStore.endDate
@@ -8,8 +9,8 @@ struct TimerView: View {
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    private var isWaiting: Bool {
-        if let endDate { return endDate > now }
+    private var goalReached: Bool {
+        if let endDate { return now >= endDate }
         return false
     }
 
@@ -25,12 +26,12 @@ struct TimerView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Meal timer")
+            .navigationTitle("Fasting timer")
         }
         .onReceive(ticker) { date in
             now = date
             // Pick up changes made from the widget or Live Activity.
-            if endDate != MealTimerStore.endDate {
+            if startDate != MealTimerStore.startDate {
                 refresh()
             }
         }
@@ -39,23 +40,38 @@ struct TimerView: View {
 
     private var statusCard: some View {
         VStack(spacing: 14) {
-            if isWaiting, let startDate, let endDate {
-                Text("⏳ Hold off on eating")
-                    .font(.system(.title2, design: .rounded).weight(.bold))
-                    .foregroundStyle(Theme.orange)
-                Text(timerInterval: startDate...endDate, countsDown: true)
-                    .font(.system(size: 64, weight: .heavy, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.grape)
-                Text("Next meal at \(endDate.formatted(date: .omitted, time: .shortened))")
+            if let startDate {
+                Text("Since your last meal")
+                    .font(.system(.headline, design: .rounded))
                     .foregroundStyle(.secondary)
+                // .timer style counts up from a past date, and keeps going.
+                Text(startDate, style: .timer)
+                    .font(.system(size: 60, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                    .foregroundStyle(goalReached ? Theme.mint : Theme.orange)
+
+                ProgressView(value: progress)
+                    .tint(goalReached ? Theme.mint : Theme.orange)
+                    .padding(.horizontal, 24)
+
+                Text(goalReached
+                     ? "✅ Past your \(hoursText)-hour goal"
+                     : "⏳ Goal: \(hoursText) hours")
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(goalReached ? Theme.mint : .secondary)
+
+                Text("Last ate at \(startDate.formatted(date: .omitted, time: .shortened))")
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
             } else {
                 Text("🍽️")
                     .font(.system(size: 64))
-                Text("You can eat")
-                    .font(.system(size: 40, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Theme.mint)
-                Text("Start the timer after your meal.")
+                Text("No meal yet")
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                Text("Tap the button when you eat. The timer counts up from there.")
+                    .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }
         }
@@ -72,7 +88,7 @@ struct TimerView: View {
                     refresh()
                 }
             } label: {
-                Text(isWaiting ? "Restart timer" : "Start \(hoursText)-hour timer")
+                Text("I just ate")
                     .font(.system(.headline, design: .rounded))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -80,8 +96,8 @@ struct TimerView: View {
             .buttonStyle(.borderedProminent)
             .tint(Theme.grape)
 
-            if isWaiting {
-                Button("Reset", role: .destructive) {
+            if startDate != nil {
+                Button("Clear timer", role: .destructive) {
                     Task {
                         await MealTimerController.stop()
                         refresh()
@@ -89,6 +105,14 @@ struct TimerView: View {
                 }
             }
         }
+    }
+
+    /// 0...1 progress toward the goal gap.
+    private var progress: Double {
+        guard let startDate else { return 0 }
+        let goal = MealTimerStore.gapHours * 3600
+        guard goal > 0 else { return 1 }
+        return min(max(now.timeIntervalSince(startDate) / goal, 0), 1)
     }
 
     private var hoursText: String {

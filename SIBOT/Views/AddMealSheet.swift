@@ -36,9 +36,9 @@ struct AddMealSheet: View {
                         .foregroundStyle(.secondary)
                 }
                 Section {
-                    Toggle("Start the meal timer", isOn: $startTimer)
+                    Toggle("Restart the fasting timer", isOn: $startTimer)
                 } footer: {
-                    Text("Only starts if the meal time is within the last hour.")
+                    Text("Counts up from the time above. Only applies if that time is in the past 24 hours or just now.")
                 }
             }
             .navigationTitle("Log a meal")
@@ -71,11 +71,15 @@ struct AddMealSheet: View {
         )
         modelContext.insert(entry)
 
-        let recent = abs(when.timeIntervalSinceNow) < 3600
-        let shouldStart = startTimer && recent
+        // Only restart the timer for meals from the last 24 hours (or a few minutes ahead),
+        // and never move it backwards past a more recent meal.
+        let age = -when.timeIntervalSinceNow
+        let lastMeal = MealTimerStore.startDate ?? .distantPast
+        let shouldStart = startTimer && age < 24 * 3600 && age > -300 && when >= lastMeal
+        let mealTime = min(when, Date())
         dismiss()
         if shouldStart {
-            Task { await MealTimerController.start() }
+            Task { await MealTimerController.start(at: mealTime) }
         }
     }
 }

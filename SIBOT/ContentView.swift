@@ -8,7 +8,7 @@ struct ContentView: View {
             LogView()
                 .tabItem { Label("Log", systemImage: "list.bullet.rectangle") }
             TimerView()
-                .tabItem { Label("Timer", systemImage: "timer") }
+                .tabItem { Label("Fasting", systemImage: "timer") }
             RemindersView()
                 .tabItem { Label("Reminders", systemImage: "bell.badge") }
             SettingsView()
