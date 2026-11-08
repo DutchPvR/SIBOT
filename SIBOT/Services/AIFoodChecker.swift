@@ -42,11 +42,14 @@ enum AIFoodChecker {
     }
 
     // Kept short on purpose: every word is billed on every request.
+    // From the Cedars-Sinai low fermentation diet handout. Kept short: every word is billed.
     static let dietRules = """
-    Diet: proteins and fats ok; simple carbs best (white rice, potatoes, white/sourdough bread, sugar); \
-    avoid cabbage, broccoli, cauliflower, Brussels sprouts, beans, legumes, hummus, whole wheat, bran, oats, \
-    lactose dairy (hard aged cheese and lactose-free milk ok), yogurt, fermented/probiotic foods, sugar alcohols, sucralose, gum, \
-    dried fruit, chia, flax; limit apples, pears, ripe bananas, leafy greens, onion, garlic; other fruit one serving; nuts ok.
+    Diet: all proteins ok (steakhouse butter has lactose); rice, potatoes, sweet potatoes best; white/sourdough/French/Italian/potato bread and all pasta ok; \
+    anything grown under ground ok (onion, garlic, carrots, beets); fruit vegetables ok (tomato, cucumber, peppers, zucchini, squash, eggplant, peas but not the pod); \
+    mushrooms ok; all fruit ok except apples, pears, bananas (minimum); nuts and peanut butter ok; fats ok; table sugar and NutraSweet ok; \
+    Lactaid milk ok; Rice Krispies and cream of wheat ok. \
+    Avoid: beans, legumes, hummus; cabbage, broccoli, cauliflower, Brussels sprouts; leafy greens except a side salad; whole wheat, multigrain, oatmeal, added fiber; \
+    regular milk, cheese, yogurt, ice cream (hard aged cheese only as a rare cheat); fructose and honey; sucralose (Splenda), sugar alcohols, gum; probiotics.
     """
 
     private static let systemPrompt = """

@@ -9,11 +9,11 @@ enum MealTimerStore {
         UserDefaults(suiteName: appGroup) ?? .standard
     }
 
-    /// Hours to wait between meals. Default 5.
+    /// Hours to wait between meals. Default 4, as in the Cedars-Sinai handout.
     static var gapHours: Double {
         get {
             let value = defaults.double(forKey: "gapHours")
-            return value == 0 ? 5 : value
+            return value == 0 ? 4 : value
         }
         set { defaults.set(newValue, forKey: "gapHours") }
     }

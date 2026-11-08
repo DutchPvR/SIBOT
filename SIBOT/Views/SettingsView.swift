@@ -32,7 +32,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Fasting timer")
                 } footer: {
-                    Text("The timer counts up from your last meal. The goal turns it green and sends a \"you can eat\" notification. Default is 5 hours. Changes apply the next time you tap \"I just ate\".")
+                    Text("The timer counts up from your last meal. The goal turns it green and sends a \"you can eat\" notification. The Cedars-Sinai handout recommends at least 4 hours.")
                 }
 
                 Section {

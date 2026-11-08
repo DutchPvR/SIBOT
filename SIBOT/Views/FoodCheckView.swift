@@ -150,20 +150,22 @@ private struct FoodCheckContent: View {
 
     // MARK: - Cheat sheet
 
+    // From the Cedars-Sinai "Low Fermentation Diet / SIBO Diet" handout (Mark Pimentel, M.D.).
     private var cheatSheet: some View {
         VStack(spacing: 14) {
             sheetCard(
                 status: .safe,
                 title: "Good",
                 lines: [
-                    "Meat, fish, eggs, plain proteins",
-                    "White rice, potatoes, sweet potatoes",
-                    "White, sourdough or French bread, plain pasta",
-                    "Carrots, cucumber, tomato, zucchini, peppers, eggplant, green beans",
-                    "Most fruit, one serving at a time (berries, citrus, grapes, pineapple, melon)",
-                    "Lactose-free milk, hard aged cheese",
-                    "Nuts, oils, butter",
-                    "Plain sugar, dark chocolate"
+                    "All proteins: meat, fish, eggs",
+                    "Rice, potatoes, sweet potatoes",
+                    "White, sourdough, French or Italian bread, all pasta",
+                    "Anything grown under the ground: onion, garlic, carrots, beets",
+                    "Fruit vegetables: tomato, cucumber, peppers, zucchini, eggplant, peas",
+                    "Mushrooms",
+                    "All fruit except apples, pears and bananas",
+                    "Nuts and peanut butter, oils",
+                    "Lactaid milk, regular sugar, dark chocolate, NutraSweet"
                 ]
             )
 
@@ -171,10 +173,10 @@ private struct FoodCheckContent: View {
                 status: .limit,
                 title: "Small amounts",
                 lines: [
-                    "Onion and garlic, cooked and small",
-                    "Leafy greens and salad, only as a side",
-                    "Apples, pears, ripe bananas",
-                    "Avocado, mushrooms, honey"
+                    "Apples, pears, bananas",
+                    "Leafy greens or salad, as a side only",
+                    "Butter, hard aged cheese, milk chocolate",
+                    "Soda (check diet soda for Splenda)"
                 ]
             )
 
@@ -182,16 +184,33 @@ private struct FoodCheckContent: View {
                 status: .avoid,
                 title: "Not good",
                 lines: [
-                    "Broccoli, cauliflower, cabbage, Brussels sprouts",
                     "Beans, lentils, chickpeas, hummus",
-                    "Whole wheat, multigrain, oats, bran",
-                    "Regular milk, yogurt, soft cheese, ice cream",
-                    "Sugar alcohols (sorbitol, xylitol), Splenda, gum",
-                    "Dried fruit (raisins, dates, figs, prunes)",
-                    "Chia and flax seeds",
-                    "Probiotic and fermented foods (kombucha, kimchi)"
+                    "Broccoli, cauliflower, cabbage, Brussels sprouts",
+                    "Whole wheat and multigrain bread, oatmeal, added fiber",
+                    "Regular milk, cheese, yogurt, ice cream",
+                    "Splenda, sugar alcohols (-ol), gum, honey",
+                    "Probiotics"
                 ]
             )
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("HOW TO EAT")
+                    .font(.caption.weight(.heavy))
+                    .tracking(1.5)
+                    .foregroundStyle(Theme.purple)
+                ForEach([
+                    "At least 4 hours between meals",
+                    "Don't snack, and don't eat right before bed",
+                    "Drink 5 to 8 cups of liquid a day"
+                ], id: \.self) { line in
+                    Hairline()
+                    Text(line)
+                        .font(.body.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
         }
     }
 
