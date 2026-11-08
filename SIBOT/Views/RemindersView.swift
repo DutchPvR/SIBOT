@@ -35,10 +35,10 @@ struct RemindersView: View {
                         Section("History") {
                             ForEach(logs.prefix(20)) { log in
                                 HStack {
-                                    Text(log.taken ? "✅" : "⏭️")
+                                    Image(systemName: log.taken ? "checkmark.circle.fill" : "forward.circle")
                                     VStack(alignment: .leading) {
                                         Text(log.supplementName)
-                                            .font(.system(.body, design: .rounded).weight(.semibold))
+                                            .font(.system(.body).weight(.semibold))
                                         Text(log.day.formatted(date: .abbreviated, time: .omitted))
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
@@ -46,7 +46,7 @@ struct RemindersView: View {
                                     Spacer()
                                     Text(log.taken ? "Taken" : "Skipped")
                                         .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(log.taken ? Theme.mint : Theme.orange)
+                                        .foregroundStyle(log.taken ? Theme.green : Theme.amber)
                                 }
                             }
                         }
@@ -83,14 +83,14 @@ struct RemindersView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(supplement.name)
-                        .font(.system(.headline, design: .rounded))
+                        .font(.system(.headline))
                     Text("\(supplement.timeText) · \(supplement.daysText)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     if !supplement.enabled {
                         Text("Paused")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(Theme.orange)
+                            .foregroundStyle(Theme.amber)
                     }
                 }
                 Spacer()
@@ -101,14 +101,14 @@ struct RemindersView: View {
                         .font(.title3)
                 }
                 .buttonStyle(.borderless)
-                .tint(Theme.grape)
+                .tint(Theme.purple)
             }
 
             HStack(spacing: 10) {
                 answerButton(
                     title: "Taken",
                     systemImage: "checkmark.circle.fill",
-                    color: Theme.mint,
+                    color: Theme.green,
                     selected: log?.taken == true
                 ) {
                     SupplementLogger.record(
@@ -117,7 +117,7 @@ struct RemindersView: View {
                 answerButton(
                     title: "Skipped",
                     systemImage: "forward.circle.fill",
-                    color: Theme.orange,
+                    color: Theme.amber,
                     selected: log?.taken == false
                 ) {
                     SupplementLogger.record(
@@ -150,7 +150,7 @@ struct RemindersView: View {
     ) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                .font(.system(.subheadline).weight(.bold))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(selected ? color : color.opacity(0.15), in: Capsule())
@@ -233,10 +233,10 @@ struct SupplementEditSheet: View {
                     if selected { weekdays.remove(weekday) } else { weekdays.insert(weekday) }
                 } label: {
                     Text(symbols[weekday - 1])
-                        .font(.system(.subheadline, design: .rounded).weight(.bold))
+                        .font(.system(.subheadline).weight(.bold))
                         .frame(width: 36, height: 36)
-                        .background(selected ? Theme.grape : Theme.grape.opacity(0.12), in: Circle())
-                        .foregroundStyle(selected ? Color.white : Theme.grape)
+                        .background(selected ? Theme.purple : Theme.purple.opacity(0.12), in: Circle())
+                        .foregroundStyle(selected ? Color.white : Theme.purple)
                 }
                 .buttonStyle(.borderless)
             }

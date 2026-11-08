@@ -59,14 +59,14 @@ struct LogView: View {
             Spacer()
             Button { selected = Date() } label: {
                 Text(title)
-                    .font(.system(.headline, design: .rounded))
+                    .font(.system(.headline))
                     .foregroundStyle(.primary)
             }
             Spacer()
             Button { step(1) } label: { Image(systemName: "chevron.right") }
         }
         .padding(.horizontal, 24)
-        .tint(Theme.grape)
+        .tint(Theme.purple)
     }
 
     private var title: String {

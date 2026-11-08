@@ -54,7 +54,7 @@ struct DayLogView: View {
 
         return HStack(alignment: .top, spacing: 10) {
             Text(hourLabel(hour))
-                .font(.system(.caption, design: .rounded).weight(.semibold))
+                .font(.system(.caption).weight(.semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: 48, alignment: .trailing)
                 .padding(.top, 6)
@@ -90,10 +90,10 @@ struct DayLogView: View {
             Button("Delete", role: .destructive) { modelContext.delete(meal) }
         } label: {
             HStack(spacing: 8) {
-                Text(meal.status.emoji)
+                StatusDot(status: meal.status)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(meal.text)
-                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        .font(.system(.subheadline).weight(.semibold))
                         .multilineTextAlignment(.leading)
                     HStack(spacing: 6) {
                         Text(meal.date.formatted(date: .omitted, time: .shortened))
@@ -110,7 +110,7 @@ struct DayLogView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(meal.status.color.opacity(0.22), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(meal.status.color.opacity(0.18), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
             .overlay(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(meal.status.color)
@@ -122,9 +122,9 @@ struct DayLogView: View {
 
     private func supplementPill(_ log: SupplementLog) -> some View {
         HStack(spacing: 8) {
-            Text("💊")
+            Image(systemName: "pills").foregroundStyle(Theme.purple)
             Text("\(log.supplementName) · \(log.taken ? "taken" : "skipped")")
-                .font(.system(.footnote, design: .rounded).weight(.semibold))
+                .font(.system(.footnote).weight(.semibold))
             Spacer(minLength: 0)
             Text(log.date.formatted(date: .omitted, time: .shortened))
                 .font(.caption)
@@ -132,7 +132,7 @@ struct DayLogView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Theme.grape.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Theme.purple.opacity(0.10), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
     }
 
     private func symptomLabel(_ score: Int) -> String {

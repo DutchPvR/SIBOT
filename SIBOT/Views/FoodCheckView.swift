@@ -79,14 +79,14 @@ private struct FoodCheckContent: View {
                 status: .safe,
                 title: "Good",
                 lines: [
-                    "🍗 Meat, fish, eggs, plain proteins",
-                    "🍚 White rice, potatoes, sweet potatoes",
-                    "🍞 White, sourdough or French bread, plain pasta",
-                    "🥕 Carrots, cucumber, tomato, zucchini, peppers, eggplant, green beans",
-                    "🍓 Most fruit, one serving at a time (berries, citrus, grapes, pineapple, melon)",
-                    "🥛 Lactose-free milk, hard aged cheese",
-                    "🥜 Nuts, oils, butter",
-                    "🍫 Plain sugar, dark chocolate"
+                    "Meat, fish, eggs, plain proteins",
+                    "White rice, potatoes, sweet potatoes",
+                    "White, sourdough or French bread, plain pasta",
+                    "Carrots, cucumber, tomato, zucchini, peppers, eggplant, green beans",
+                    "Most fruit, one serving at a time (berries, citrus, grapes, pineapple, melon)",
+                    "Lactose-free milk, hard aged cheese",
+                    "Nuts, oils, butter",
+                    "Plain sugar, dark chocolate"
                 ]
             )
 
@@ -94,10 +94,10 @@ private struct FoodCheckContent: View {
                 status: .limit,
                 title: "Small amounts",
                 lines: [
-                    "🧅 Onion and garlic, cooked and small",
-                    "🥬 Leafy greens and salad, only as a side",
-                    "🍌 Apples, pears, ripe bananas",
-                    "🥑 Avocado, mushrooms, honey"
+                    "Onion and garlic, cooked and small",
+                    "Leafy greens and salad, only as a side",
+                    "Apples, pears, ripe bananas",
+                    "Avocado, mushrooms, honey"
                 ]
             )
 
@@ -105,14 +105,14 @@ private struct FoodCheckContent: View {
                 status: .avoid,
                 title: "Not good",
                 lines: [
-                    "🥦 Broccoli, cauliflower, cabbage, Brussels sprouts",
-                    "🫘 Beans, lentils, chickpeas, hummus",
-                    "🌾 Whole wheat, multigrain, oats, bran",
-                    "🧀 Regular milk, yogurt, soft cheese, ice cream",
-                    "🍬 Sugar alcohols (sorbitol, xylitol), Splenda, gum",
-                    "🍇 Dried fruit (raisins, dates, figs, prunes)",
-                    "🌱 Chia and flax seeds",
-                    "🫙 Probiotic and fermented foods (kombucha, kimchi)"
+                    "Broccoli, cauliflower, cabbage, Brussels sprouts",
+                    "Beans, lentils, chickpeas, hummus",
+                    "Whole wheat, multigrain, oats, bran",
+                    "Regular milk, yogurt, soft cheese, ice cream",
+                    "Sugar alcohols (sorbitol, xylitol), Splenda, gum",
+                    "Dried fruit (raisins, dates, figs, prunes)",
+                    "Chia and flax seeds",
+                    "Probiotic and fermented foods (kombucha, kimchi)"
                 ]
             )
 
@@ -126,21 +126,22 @@ private struct FoodCheckContent: View {
 
     private func sheetCard(status: FoodStatus, title: String, lines: [String]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("\(status.emoji) \(title)")
-                .font(.system(.title3, design: .rounded).weight(.heavy))
-                .foregroundStyle(status.color)
+            HStack(spacing: 8) {
+                StatusDot(status: status)
+                Text(title.uppercased())
+                    .font(.caption.weight(.heavy))
+                    .tracking(1.5)
+                    .foregroundStyle(status.color)
+            }
             ForEach(lines, id: \.self) { line in
+                Hairline()
                 Text(line)
-                    .font(.system(.subheadline, design: .rounded))
+                    .font(.system(.body).weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .card()
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(status.color.opacity(0.35), lineWidth: 1.5)
-        )
+        .padding(.vertical, 8)
     }
 
     // MARK: - Search results
@@ -149,8 +150,9 @@ private struct FoodCheckContent: View {
     private var searchResults: some View {
         if trimmed.isEmpty {
             VStack(spacing: 8) {
-                Text("🔎")
-                    .font(.system(size: 40))
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 32, weight: .light))
+                    .foregroundStyle(Theme.purple)
                 Text("Type a food to see if it fits the diet.")
                     .foregroundStyle(.secondary)
             }
@@ -172,7 +174,7 @@ private struct FoodCheckContent: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(item.name)
-                    .font(.system(.headline, design: .rounded))
+                    .font(.system(.headline))
                 Spacer()
                 StatusBadge(status: item.foodStatus)
             }
@@ -188,7 +190,7 @@ private struct FoodCheckContent: View {
     private var askAICard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(results.isEmpty ? "Not on the list" : "Not what you meant?")
-                .font(.system(.headline, design: .rounded))
+                .font(.system(.headline))
 
             if let aiVerdict {
                 HStack {
@@ -196,8 +198,7 @@ private struct FoodCheckContent: View {
                         .font(.caption.weight(.bold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(Theme.grape.opacity(0.15), in: Capsule())
-                        .foregroundStyle(Theme.grape)
+                        .foregroundStyle(Theme.purple)
                     Spacer()
                     StatusBadge(status: aiVerdict.status)
                 }
@@ -212,7 +213,7 @@ private struct FoodCheckContent: View {
                 if let aiError {
                     Text(aiError)
                         .font(.subheadline)
-                        .foregroundStyle(Theme.pink)
+                        .foregroundStyle(Theme.ink)
                 }
                 Button {
                     Task { await ask() }
@@ -224,7 +225,7 @@ private struct FoodCheckContent: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Theme.grape)
+                .tint(Theme.purple)
                 .disabled(isAsking)
             }
         }
@@ -240,7 +241,7 @@ private struct FoodCheckContent: View {
             Label("Log it", systemImage: "plus.circle.fill")
                 .font(.subheadline.weight(.semibold))
         }
-        .tint(Theme.pink)
+        .tint(Theme.purple)
     }
 
     private func ask() async {

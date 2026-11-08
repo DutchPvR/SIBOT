@@ -19,14 +19,14 @@ struct TimerView: View {
             ZStack {
                 Theme.background
                 VStack(spacing: 24) {
-                    Spacer()
                     statusCard
+                        .padding(.top, 40)
                     Spacer()
                     buttons
                 }
                 .padding()
             }
-            .navigationTitle("Fasting timer")
+            .navigationTitle("Fasting")
         }
         .onReceive(ticker) { date in
             now = date
@@ -39,49 +39,45 @@ struct TimerView: View {
     }
 
     private var statusCard: some View {
-        VStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             if let startDate {
-                Text("Since your last meal")
-                    .font(.system(.headline, design: .rounded))
+                Text("SINCE YOUR LAST MEAL")
+                    .font(.caption.weight(.heavy))
+                    .tracking(1.5)
                     .foregroundStyle(.secondary)
                 // .timer style counts up from a past date, and keeps going.
                 Text(startDate, style: .timer)
-                    .font(.system(size: 60, weight: .heavy, design: .rounded))
+                    .font(.system(size: 96, weight: .heavy))
                     .monospacedDigit()
-                    .minimumScaleFactor(0.5)
+                    .minimumScaleFactor(0.4)
                     .lineLimit(1)
-                    .foregroundStyle(goalReached ? Theme.mint : Theme.orange)
+                    .foregroundStyle(goalReached ? Theme.green : Theme.ink)
 
                 ProgressView(value: progress)
-                    .tint(goalReached ? Theme.mint : Theme.orange)
-                    .padding(.horizontal, 24)
+                    .tint(goalReached ? Theme.green : Theme.purple)
+                    .padding(.top, 8)
 
-                Text(goalReached
-                     ? "✅ Past your \(hoursText)-hour goal"
-                     : "⏳ Goal: \(hoursText) hours")
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(goalReached ? Theme.mint : .secondary)
-
-                Text("Last ate at \(startDate.formatted(date: .omitted, time: .shortened))")
-                    .font(.footnote)
-                    .foregroundStyle(.tertiary)
+                HStack {
+                    Text("Last ate \(startDate.formatted(date: .omitted, time: .shortened))")
+                    Spacer()
+                    Text(goalReached ? "Past \(hoursText)h goal" : "Goal \(hoursText)h")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(goalReached ? Theme.green : Theme.ink)
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
             } else {
-                Text("🍽️")
-                    .font(.system(size: 64))
                 Text("No meal yet")
-                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .font(.system(size: 44, weight: .heavy))
                 Text("Tap the button when you eat. The timer counts up from there.")
-                    .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-        .card()
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var buttons: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             Button {
                 Task {
                     await MealTimerController.start()
@@ -89,12 +85,13 @@ struct TimerView: View {
                 }
             } label: {
                 Text("I just ate")
-                    .font(.system(.headline, design: .rounded))
+                    .font(.headline.weight(.heavy))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 16)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Theme.grape)
+            .buttonBorderShape(.capsule)
+            .tint(Theme.purple)
 
             if startDate != nil {
                 Button("Clear timer", role: .destructive) {
@@ -103,6 +100,8 @@ struct TimerView: View {
                         refresh()
                     }
                 }
+                .font(.subheadline)
+                .padding(.vertical, 6)
             }
         }
     }

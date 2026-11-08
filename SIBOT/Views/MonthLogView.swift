@@ -35,7 +35,7 @@ struct MonthLogView: View {
                 LazyVGrid(columns: columns, spacing: 6) {
                     ForEach(Array(weekdayHeaders.enumerated()), id: \.offset) { _, symbol in
                         Text(symbol)
-                            .font(.system(.caption, design: .rounded).weight(.bold))
+                            .font(.system(.caption).weight(.bold))
                             .foregroundStyle(.secondary)
                     }
                     ForEach(0..<leadingBlanks, id: \.self) { _ in
@@ -70,21 +70,21 @@ struct MonthLogView: View {
         let isToday = calendar.isDateInToday(day)
         let fill: Color = {
             guard let worst else { return Color.secondary.opacity(0.15) }
-            return worst == .unknown ? Theme.sky.opacity(0.5) : worst.color
+            return worst == .unknown ? Color.secondary.opacity(0.5) : worst.color
         }()
 
         return Button {
             onSelectDay(day)
         } label: {
             Text(day.formatted(.dateTime.day()))
-                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                .font(.system(.subheadline).weight(.bold))
                 .foregroundStyle(worst == nil ? Color.primary : Color.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
-                .background(fill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(fill, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(isToday ? Theme.grape : .clear, lineWidth: 2.5)
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(isToday ? Theme.purple : .clear, lineWidth: 2.5)
                 )
         }
         .buttonStyle(.plain)

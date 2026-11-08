@@ -28,7 +28,7 @@ struct AddMealSheet: View {
                 }
                 Section("How does it fit the diet?") {
                     Picker("Status", selection: $status) {
-                        ForEach(FoodStatus.allCases) { Text("\($0.emoji) \($0.label)").tag($0) }
+                        ForEach(FoodStatus.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.segmented)
                     Text("Filled in from the food list when it recognizes a word. You can change it.")

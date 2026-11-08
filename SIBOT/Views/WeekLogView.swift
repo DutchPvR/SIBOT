@@ -37,10 +37,10 @@ struct WeekLogView: View {
             HStack(spacing: 12) {
                 VStack(spacing: 2) {
                     Text(day.formatted(.dateTime.weekday(.abbreviated)))
-                        .font(.system(.caption, design: .rounded).weight(.bold))
-                        .foregroundStyle(isToday ? Theme.grape : .secondary)
+                        .font(.system(.caption).weight(.bold))
+                        .foregroundStyle(isToday ? Theme.purple : .secondary)
                     Text(day.formatted(.dateTime.day()))
-                        .font(.system(.title3, design: .rounded).weight(.heavy))
+                        .font(.system(.title3).weight(.heavy))
                         .foregroundStyle(.primary)
                 }
                 .frame(width: 44)
@@ -69,7 +69,7 @@ struct WeekLogView: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(.background, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
             .overlay(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2)
                     .fill((worst?.color ?? Color.secondary).opacity(worst == nil ? 0.25 : 1))
@@ -77,8 +77,8 @@ struct WeekLogView: View {
                     .padding(.vertical, 10)
             }
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isToday ? Theme.grape.opacity(0.6) : .clear, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .stroke(isToday ? Theme.purple : .clear, lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)

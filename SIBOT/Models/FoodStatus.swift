@@ -14,21 +14,12 @@ enum FoodStatus: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    var emoji: String {
-        switch self {
-        case .safe: return "✅"
-        case .limit: return "⚠️"
-        case .avoid: return "🚫"
-        case .unknown: return "❓"
-        }
-    }
-
     var color: Color {
         switch self {
-        case .safe: return Theme.mint
-        case .limit: return Theme.orange
+        case .safe: return Theme.green
+        case .limit: return Theme.amber
         case .avoid: return Theme.red
-        case .unknown: return Theme.sky
+        case .unknown: return Color.secondary
         }
     }
 }

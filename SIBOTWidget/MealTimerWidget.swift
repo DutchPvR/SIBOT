@@ -41,9 +41,8 @@ struct MealTimerWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: MealTimerEntry
 
-    private let grape = Color(red: 0.42, green: 0.30, blue: 0.85)
-    private let mint = Color(red: 0.14, green: 0.74, blue: 0.56)
-    private let orange = Color(red: 1.00, green: 0.62, blue: 0.20)
+    private let grape = Color(red: 0.44, green: 0.27, blue: 0.86)
+    private let green = Color(red: 0.09, green: 0.64, blue: 0.29)
 
     var body: some View {
         switch family {
@@ -54,32 +53,34 @@ struct MealTimerWidgetView: View {
         }
     }
 
-    private var timerColor: Color { entry.goalReached ? mint : orange }
+    private var timerColor: Color { entry.goalReached ? green : Color.primary }
 
     private var homeView: some View {
         VStack(spacing: 8) {
             if let start = entry.startDate {
-                Text("Since last meal")
-                    .font(.system(.caption, design: .rounded).weight(.bold))
+                Text("SINCE LAST MEAL")
+                    .font(.system(size: 10, weight: .heavy))
+                    .tracking(1)
                     .foregroundStyle(.secondary)
                 // .timer style counts up from a past date and keeps going.
                 Text(start, style: .timer)
-                    .font(.system(size: 30, weight: .heavy, design: .rounded))
+                    .font(.system(size: 34, weight: .heavy))
                     .monospacedDigit()
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
                     .foregroundStyle(timerColor)
                     .multilineTextAlignment(.center)
             } else {
-                Text("🍽️ No meal yet")
-                    .font(.system(.headline, design: .rounded).weight(.heavy))
+                Text("No meal yet")
+                    .font(.system(.headline).weight(.heavy))
                     .multilineTextAlignment(.center)
             }
             Button(intent: StartMealTimerIntent()) {
                 Text("I just ate")
-                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .font(.system(.subheadline).weight(.bold))
             }
             .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
             .tint(grape)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -91,10 +92,10 @@ struct MealTimerWidgetView: View {
                 Text("Since last meal")
                     .font(.caption)
                 Text(start, style: .timer)
-                    .font(.system(.title2, design: .rounded).weight(.bold))
+                    .font(.system(.title2).weight(.bold))
                     .monospacedDigit()
             } else {
-                Text("🍽️ No meal yet")
+                Text("No meal yet")
                     .font(.headline)
             }
         }
@@ -111,7 +112,7 @@ struct MealTimerWidget: Widget {
                 .containerBackground(for: .widget) {
                     LinearGradient(
                         colors: [
-                            Color(red: 0.42, green: 0.30, blue: 0.85).opacity(0.18),
+                            Color(red: 0.44, green: 0.27, blue: 0.86).opacity(0.18),
                             Color(red: 1.00, green: 0.36, blue: 0.62).opacity(0.14)
                         ],
                         startPoint: .topLeading,
