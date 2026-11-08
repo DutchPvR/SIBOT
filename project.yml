@@ -25,6 +25,7 @@ targets:
         CFBundleDisplayName: SIBOT
         UILaunchScreen: {}
         NSSupportsLiveActivities: true
+        NSCameraUsageDescription: SIBOT uses the camera to read restaurant menus and suggest the safest dishes.
         ITSAppUsesNonExemptEncryption: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

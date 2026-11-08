@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftData
 import SwiftUI
 
@@ -5,6 +6,10 @@ import SwiftUI
 /// which takes over the screen with results while you search.
 struct FoodCheckView: View {
     @State private var query = ""
+    @State private var showingCamera = false
+    @State private var showingLibrary = false
+    @State private var libraryItem: PhotosPickerItem?
+    @State private var scan: ScanImage?
 
     var body: some View {
         NavigationStack {
@@ -15,6 +20,35 @@ struct FoodCheckView: View {
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: "Search a food, e.g. oatmeal"
                 )
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                                Button("Take a photo of a menu") { showingCamera = true }
+                            }
+                            Button("Choose a menu photo") { showingLibrary = true }
+                        } label: {
+                            Image(systemName: "camera")
+                        }
+                        .tint(Theme.purple)
+                    }
+                }
+                .fullScreenCover(isPresented: $showingCamera) {
+                    CameraPicker { scan = ScanImage(image: $0) }
+                        .ignoresSafeArea()
+                }
+                .photosPicker(isPresented: $showingLibrary, selection: $libraryItem, matching: .images)
+                .onChange(of: libraryItem) { _, item in
+                    guard let item else { return }
+                    Task {
+                        if let data = try? await item.loadTransferable(type: Data.self),
+                           let image = UIImage(data: data) {
+                            scan = ScanImage(image: image)
+                        }
+                        libraryItem = nil
+                    }
+                }
+                .sheet(item: $scan) { MenuScanView(image: $0.image) }
         }
     }
 }
