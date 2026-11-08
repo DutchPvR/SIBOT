@@ -4,6 +4,7 @@ struct SettingsView: View {
     @State private var gapHours = MealTimerStore.gapHours
     @State private var apiKey = Keychain.load(account: AIFoodChecker.keyAccount) ?? ""
     @State private var keySaved = false
+    @AppStorage(AIFoodChecker.modelDefaultsKey) private var aiModel = AIFoodChecker.defaultModel
 
     var body: some View {
         NavigationStack {
@@ -22,19 +23,22 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    SecureField("sk-ant-…", text: $apiKey)
+                    SecureField("OpenRouter API key (sk-or-…)", text: $apiKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    Button(keySaved ? "Saved ✓" : "Save key") {
+                    TextField("Model", text: $aiModel)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Button(keySaved ? "Saved ✓" : "Save") {
                         Keychain.save(apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
                                       account: AIFoodChecker.keyAccount)
                         keySaved = true
                     }
                     .onChange(of: apiKey) { _, _ in keySaved = false }
                 } header: {
-                    Text("Ask Claude (optional)")
+                    Text("AI fallback (optional)")
                 } footer: {
-                    Text("Used for foods that are not on the built-in list. The key is stored in this phone's Keychain and only sent to Anthropic.")
+                    Text("Used for foods that are not on the built-in list. Enter any model name from openrouter.ai/models, for example anthropic/claude-sonnet-4.5. The key is stored in this phone's Keychain and only sent to OpenRouter.")
                 }
 
                 Section {

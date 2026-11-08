@@ -2,7 +2,7 @@
 
 A personal iPhone app for following the Cedars-Sinai low-fermentation diet for SIBO.
 
-- **Can I eat this?** Search a bundled food list (Safe / Limit / Avoid). For foods not on the list, optionally ask Claude (clearly labeled as an AI guess).
+- **Can I eat this?** Search a bundled food list (Safe / Limit / Avoid). For foods not on the list, optionally ask an AI model (clearly labeled as an AI guess).
 - **Meal log** with a 14-day chart and an optional 1-5 symptom rating per meal.
 - **Meal timer** (default 5 hours, adjustable) that you start manually, with a notification when it ends.
 - **Home screen widget + Live Activity** to start and watch the countdown.
@@ -75,10 +75,11 @@ One-time setup for TestFlight:
 If signing fails on the App Group, register `group.com.dutchpvr.sibot` once at
 developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > App Groups, then re-run.
 
-## Ask Claude (optional)
+## AI fallback (optional)
 
-In **Settings**, paste an Anthropic API key. It is stored in the iPhone Keychain and sent only to
-api.anthropic.com. Without a key, the app still works with the bundled list.
+In **Settings**, paste an [OpenRouter](https://openrouter.ai) API key and, if you like, change the model name
+(default `anthropic/claude-sonnet-4.5`; any model from openrouter.ai/models works). The key is stored in the
+iPhone Keychain and sent only to openrouter.ai. Without a key, the app still works with the bundled list.
 
 ## Project layout
 

@@ -12,18 +12,25 @@ enum AIFoodError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingKey:
-            return "Add your Anthropic API key in Settings to ask Claude about foods that are not on the list."
+            return "Add your OpenRouter API key in Settings to ask AI about foods that are not on the list."
         case .badResponse(let detail):
             return detail
         }
     }
 }
 
-/// Asks Claude about foods that are not in the bundled list.
+/// Asks an AI model (through OpenRouter) about foods that are not in the bundled list.
 /// The API key lives in the iOS Keychain on this device only.
 enum AIFoodChecker {
-    static let keyAccount = "anthropic-api-key"
-    private static let model = "claude-sonnet-5-5"
+    static let keyAccount = "openrouter-api-key"
+    static let modelDefaultsKey = "aiModel"
+    static let defaultModel = "anthropic/claude-sonnet-4.5"
+
+    static var model: String {
+        let saved = UserDefaults.standard.string(forKey: modelDefaultsKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return saved.isEmpty ? defaultModel : saved
+    }
 
     private static let systemPrompt = """
     You help someone with SIBO follow the Cedars-Sinai low fermentation diet. \
@@ -45,37 +52,46 @@ enum AIFoodChecker {
             throw AIFoodError.missingKey
         }
 
-        var request = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
+        var request = URLRequest(url: URL(string: "https://openrouter.ai/api/v1/chat/completions")!)
         request.httpMethod = "POST"
         request.timeoutInterval = 30
-        request.setValue(key, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.setValue("application/json", forHTTPHeaderField: "content-type")
+        request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("SIBOT", forHTTPHeaderField: "X-Title")
 
         let body: [String: Any] = [
             "model": model,
             "max_tokens": 300,
-            "system": systemPrompt,
-            "messages": [["role": "user", "content": "Food or meal: \(food)"]]
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": "Food or meal: \(food)"]
+            ]
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw AIFoodError.badResponse("No response from Claude.")
+            throw AIFoodError.badResponse("No response from OpenRouter.")
         }
         guard http.statusCode == 200 else {
-            if http.statusCode == 401 {
-                throw AIFoodError.badResponse("Claude rejected the API key. Check it in Settings.")
+            switch http.statusCode {
+            case 401:
+                throw AIFoodError.badResponse("OpenRouter rejected the API key. Check it in Settings.")
+            case 402:
+                throw AIFoodError.badResponse("OpenRouter says your account is out of credits.")
+            case 400, 404:
+                throw AIFoodError.badResponse("OpenRouter could not use the model “\(model)”. Check the model name in Settings.")
+            default:
+                throw AIFoodError.badResponse("OpenRouter returned an error (\(http.statusCode)).")
             }
-            throw AIFoodError.badResponse("Claude returned an error (\(http.statusCode)).")
         }
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let content = json["content"] as? [[String: Any]],
-              let text = content.first(where: { ($0["type"] as? String) == "text" })?["text"] as? String
+              let choices = json["choices"] as? [[String: Any]],
+              let message = choices.first?["message"] as? [String: Any],
+              let text = message["content"] as? String
         else {
-            throw AIFoodError.badResponse("Could not read Claude's answer.")
+            throw AIFoodError.badResponse("Could not read the AI's answer.")
         }
         return try parse(text)
     }
@@ -88,7 +104,7 @@ enum AIFoodChecker {
               let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let statusString = obj["status"] as? String
         else {
-            throw AIFoodError.badResponse("Claude's answer was not in the expected format.")
+            throw AIFoodError.badResponse("The AI's answer was not in the expected format.")
         }
         let status = FoodStatus(rawValue: statusString.lowercased()) ?? .limit
         let reason = (obj["reason"] as? String) ?? ""
