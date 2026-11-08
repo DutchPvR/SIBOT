@@ -18,68 +18,12 @@ struct DayLogView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            bloatBar
+            BloatCheckBar(day: day, check: check)
             timeline
         }
         .sheet(item: $editingMeal) { EditMealSheet(meal: $0) }
         .sheet(isPresented: Binding(get: { addingTo != nil }, set: { if !$0 { addingTo = nil } })) {
             AddMealSheet(initialDate: addingTo ?? Date(), title: "Add to this meal")
-        }
-    }
-
-    // MARK: - Daily bloat check
-
-    private var bloatBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("BELLY TODAY")
-                .font(.caption.weight(.heavy))
-                .tracking(1.5)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 10) {
-                bloatButton("No bloat", value: false)
-                bloatButton("Bloated", value: true)
-            }
-        }
-        .padding(.horizontal)
-        .padding(.bottom, 12)
-    }
-
-    /// Same marks as the month view: ring = no bloat, filled dot = bloated.
-    private func bloatButton(_ title: String, value: Bool) -> some View {
-        let selected = check?.bloated == value
-        return Button {
-            setBloat(value)
-        } label: {
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle().strokeBorder(Color.primary, lineWidth: 1.5)
-                    if value { Circle().fill(Color.primary) }
-                }
-                .frame(width: 14, height: 14)
-                Text(title)
-                    .font(.subheadline.weight(selected ? .heavy : .medium))
-            }
-            .foregroundStyle(selected ? Color.primary : Color.secondary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(selected ? Color.primary : Theme.hairline, lineWidth: selected ? 1.5 : 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// Tap an answer to set it; tap it again to clear it.
-    private func setBloat(_ value: Bool) {
-        if let check {
-            if check.bloated == value {
-                modelContext.delete(check)
-            } else {
-                check.bloated = value
-            }
-        } else {
-            modelContext.insert(DailyCheck(day: day, bloated: value))
         }
     }
 

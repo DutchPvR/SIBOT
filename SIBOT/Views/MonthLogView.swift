@@ -100,11 +100,11 @@ struct MonthLogView: View {
                 .frame(height: 46)
                 .background(fill, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                 .overlay(alignment: .bottom) {
-                    if let check {
+                    if let check, let bloated = check.answer {
                         // Filled dot = bloated, ring = no bloat.
                         Circle()
                             .strokeBorder(worst == nil ? Color.primary : Color.white, lineWidth: 1.5)
-                            .background(Circle().fill(check.bloated ? (worst == nil ? Color.primary : Color.white) : Color.clear))
+                            .background(Circle().fill(bloated ? (worst == nil ? Color.primary : Color.white) : Color.clear))
                             .frame(width: 8, height: 8)
                             .padding(.bottom, 5)
                     }

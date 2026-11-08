@@ -66,40 +66,72 @@ enum NotificationManager {
         "supp-\(supplementID.uuidString)-\(weekday)"
     }
 
-    /// Replaces all notifications for one supplement with one repeating notification per chosen weekday.
+    private static func content(for supplement: Supplement) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = "\(supplement.name) 💊"
+        let dose = supplement.dose.trimmingCharacters(in: .whitespaces)
+        content.body = dose.isEmpty
+            ? "Time for your \(supplement.name). Did you take it?"
+            : "Time for your \(supplement.name) (\(dose)). Did you take it?"
+        content.sound = .default
+        content.categoryIdentifier = categoryID
+        content.userInfo = [
+            "supplementID": supplement.id.uuidString,
+            "supplementName": supplement.name
+        ]
+        return content
+    }
+
+    /// Replaces all notifications for one supplement.
+    /// Ongoing reminders repeat weekly; dated courses get one notification per upcoming day so they stop on time.
     static func schedule(_ supplement: Supplement) {
         let center = UNUserNotificationCenter.current()
-        cancel(supplementID: supplement.id)
-        guard supplement.enabled else { return }
+        let prefix = "supp-\(supplement.id.uuidString)"
+        center.getPendingNotificationRequests { pending in
+            let old = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
+            center.removePendingNotificationRequests(withIdentifiers: old)
+            guard supplement.enabled else { return }
 
-        for weekday in supplement.weekdays where (1...7).contains(weekday) {
-            let content = UNMutableNotificationContent()
-            content.title = "\(supplement.name) 💊"
-            content.body = "Time for your \(supplement.name). Did you take it?"
-            content.sound = .default
-            content.categoryIdentifier = categoryID
-            content.userInfo = [
-                "supplementID": supplement.id.uuidString,
-                "supplementName": supplement.name
-            ]
+            let cal = Calendar.current
+            if supplement.hasCourse {
+                // Up to 60 upcoming days, only on chosen weekdays inside the course.
+                for offset in 0..<60 {
+                    guard let day = cal.date(byAdding: .day, value: offset, to: Date()),
+                          supplement.isExpected(on: day) else { continue }
+                    var parts = cal.dateComponents([.year, .month, .day], from: day)
+                    parts.hour = supplement.minutes / 60
+                    parts.minute = supplement.minutes % 60
+                    guard let fire = cal.date(from: parts), fire > Date() else { continue }
+                    let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+                    center.add(UNNotificationRequest(
+                        identifier: "\(prefix)-d\(parts.year ?? 0)\(parts.month ?? 0)\(parts.day ?? 0)",
+                        content: content(for: supplement),
+                        trigger: trigger))
+                }
+                return
+            }
 
-            var components = DateComponents()
-            components.weekday = weekday
-            components.hour = supplement.minutes / 60
-            components.minute = supplement.minutes % 60
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-            let request = UNNotificationRequest(
-                identifier: identifier(for: supplement.id, weekday: weekday),
-                content: content,
-                trigger: trigger
-            )
-            center.add(request)
+            for weekday in supplement.weekdays where (1...7).contains(weekday) {
+                var components = DateComponents()
+                components.weekday = weekday
+                components.hour = supplement.minutes / 60
+                components.minute = supplement.minutes % 60
+                let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+                center.add(UNNotificationRequest(
+                    identifier: identifier(for: supplement.id, weekday: weekday),
+                    content: content(for: supplement),
+                    trigger: trigger))
+            }
         }
     }
 
     static func cancel(supplementID: UUID) {
-        let ids = (1...7).map { identifier(for: supplementID, weekday: $0) }
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+        let center = UNUserNotificationCenter.current()
+        let prefix = "supp-\(supplementID.uuidString)"
+        center.getPendingNotificationRequests { pending in
+            center.removePendingNotificationRequests(
+                withIdentifiers: pending.map(\.identifier).filter { $0.hasPrefix(prefix) })
+        }
     }
 
     /// Re-creates every reminder, e.g. at launch, so schedules always match what is saved.

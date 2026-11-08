@@ -12,6 +12,12 @@ final class Supplement {
     var weekdays: [Int]
     var enabled: Bool
     var createdAt: Date
+    /// e.g. "500 mg" or "2 capsules".
+    var dose: String = ""
+    var notes: String = ""
+    /// Optional course dates, e.g. a 14-day antibiotic.
+    var startDate: Date?
+    var endDate: Date?
 
     init(name: String, minutes: Int, weekdays: [Int] = Array(1...7), enabled: Bool = true) {
         self.id = UUID()
@@ -27,6 +33,56 @@ final class Supplement {
             bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()
         ) ?? Date()
         return date.formatted(date: .omitted, time: .shortened)
+    }
+
+    var hasCourse: Bool { startDate != nil || endDate != nil }
+
+    /// "Day 3 of 14", "Ends Nov 20", "Starts Nov 20" or "Course finished" for dated courses.
+    var courseText: String? {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        if let start = startDate.map({ cal.startOfDay(for: $0) }), start > today {
+            return "Starts \(start.formatted(.dateTime.month(.abbreviated).day()))"
+        }
+        if let end = endDate.map({ cal.startOfDay(for: $0) }) {
+            if end < today { return "Course finished" }
+            if let start = startDate.map({ cal.startOfDay(for: $0) }) {
+                let total = (cal.dateComponents([.day], from: start, to: end).day ?? 0) + 1
+                let current = (cal.dateComponents([.day], from: start, to: today).day ?? 0) + 1
+                return "Day \(current) of \(total)"
+            }
+            return "Ends \(end.formatted(.dateTime.month(.abbreviated).day()))"
+        }
+        return nil
+    }
+
+    /// Whether a dose is expected on this day (right weekday and inside the course).
+    func isExpected(on day: Date) -> Bool {
+        let cal = Calendar.current
+        let d = cal.startOfDay(for: day)
+        guard weekdays.contains(cal.component(.weekday, from: d)) else { return false }
+        if d < cal.startOfDay(for: createdAt) && startDate == nil { return false }
+        if let start = startDate, d < cal.startOfDay(for: start) { return false }
+        if let end = endDate, d > cal.startOfDay(for: end) { return false }
+        return true
+    }
+
+    /// Doses taken versus expected over the last `days` days (including today).
+    func adherence(logs: [SupplementLog], days: Int = 14) -> (taken: Int, expected: Int) {
+        let cal = Calendar.current
+        var taken = 0
+        var expected = 0
+        for offset in 0..<days {
+            guard let day = cal.date(byAdding: .day, value: -offset, to: Date()), isExpected(on: day) else { continue }
+            // Today does not count as missed until it is over.
+            let log = logs.first { $0.supplementID == id && cal.isDate($0.day, inSameDayAs: day) }
+            if log?.taken == true {
+                taken += 1; expected += 1
+            } else if offset > 0 {
+                expected += 1
+            }
+        }
+        return (taken, expected)
     }
 
     var daysText: String {

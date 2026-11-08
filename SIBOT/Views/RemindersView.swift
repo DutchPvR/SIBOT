@@ -84,9 +84,21 @@ struct RemindersView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(supplement.name)
                         .font(.system(.headline))
-                    Text("\(supplement.timeText) · \(supplement.daysText)")
+                    Text(([supplement.dose.isEmpty ? nil : supplement.dose, supplement.timeText, supplement.daysText] as [String?])
+                        .compactMap { $0 }.joined(separator: " · "))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    if let course = supplement.courseText {
+                        Text(course)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(Theme.purple)
+                    }
+                    let stats = supplement.adherence(logs: logs)
+                    if stats.expected > 0 {
+                        Text("Taken \(stats.taken) of the last \(stats.expected) days")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                     if !supplement.enabled {
                         Text("Paused")
                             .font(.caption.weight(.bold))
@@ -170,6 +182,12 @@ struct SupplementEditSheet: View {
     @State private var time: Date
     @State private var weekdays: Set<Int>
     @State private var enabled: Bool
+    @State private var dose: String
+    @State private var notes: String
+    @State private var hasStart: Bool
+    @State private var start: Date
+    @State private var hasEnd: Bool
+    @State private var end: Date
     @FocusState private var nameFocused: Bool
 
     init(supplement: Supplement?) {
@@ -180,6 +198,12 @@ struct SupplementEditSheet: View {
             bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()) ?? Date())
         _weekdays = State(initialValue: Set(supplement?.weekdays ?? Array(1...7)))
         _enabled = State(initialValue: supplement?.enabled ?? true)
+        _dose = State(initialValue: supplement?.dose ?? "")
+        _notes = State(initialValue: supplement?.notes ?? "")
+        _hasStart = State(initialValue: supplement?.startDate != nil)
+        _start = State(initialValue: supplement?.startDate ?? Date())
+        _hasEnd = State(initialValue: supplement?.endDate != nil)
+        _end = State(initialValue: supplement?.endDate ?? Calendar.current.date(byAdding: .day, value: 13, to: Date()) ?? Date())
     }
 
     var body: some View {
@@ -191,6 +215,22 @@ struct SupplementEditSheet: View {
                         .submitLabel(.done)
                         .onSubmit { nameFocused = false }
                     DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute)
+                    TextField("Dose, e.g. 500 mg", text: $dose)
+                        .focused($nameFocused)
+                    TextField("Notes, e.g. with food", text: $notes, axis: .vertical)
+                        .lineLimit(1...3)
+                        .focused($nameFocused)
+                }
+
+                Section {
+                    Toggle("Start date", isOn: $hasStart)
+                    if hasStart { DatePicker("Starts", selection: $start, displayedComponents: .date) }
+                    Toggle("End date", isOn: $hasEnd)
+                    if hasEnd { DatePicker("Ends", selection: $end, in: start..., displayedComponents: .date) }
+                } header: {
+                    Text("Course")
+                } footer: {
+                    Text("For a prescription with a fixed length. Reminders stop after the end date.")
                 }
 
                 Section {
@@ -256,9 +296,17 @@ struct SupplementEditSheet: View {
             supplement.minutes = minutes
             supplement.weekdays = sortedDays
             supplement.enabled = enabled
+            supplement.dose = dose.trimmingCharacters(in: .whitespacesAndNewlines)
+            supplement.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            supplement.startDate = hasStart ? start : nil
+            supplement.endDate = hasEnd ? end : nil
             target = supplement
         } else {
             target = Supplement(name: trimmed, minutes: minutes, weekdays: sortedDays, enabled: enabled)
+            target.dose = dose.trimmingCharacters(in: .whitespacesAndNewlines)
+            target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            target.startDate = hasStart ? start : nil
+            target.endDate = hasEnd ? end : nil
             modelContext.insert(target)
         }
         try? modelContext.save()

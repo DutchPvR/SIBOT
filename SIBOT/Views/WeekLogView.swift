@@ -69,11 +69,11 @@ struct WeekLogView: View {
                     }
                 }
                 Spacer(minLength: 0)
-                if let check {
-                    Text(check.bloated ? "BLOATED" : "NO BLOAT")
+                if let check, let bloated = check.answer {
+                    Text(bloated ? "BLOATED" : "NO BLOAT")
                         .font(.system(size: 10, weight: .heavy))
                         .tracking(0.8)
-                        .foregroundStyle(check.bloated ? Theme.red : Theme.green)
+                        .foregroundStyle(bloated ? Theme.red : Theme.green)
                 }
             }
             .padding(12)
