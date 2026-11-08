@@ -5,6 +5,7 @@ struct SettingsView: View {
     @State private var apiKey = Keychain.load(account: AIFoodChecker.keyAccount) ?? ""
     @State private var keySaved = false
     @AppStorage(AIFoodChecker.modelDefaultsKey) private var aiModel = AIFoodChecker.defaultModel
+    @FocusState private var fieldFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -26,13 +27,20 @@ struct SettingsView: View {
                     SecureField("OpenRouter API key (sk-or-…)", text: $apiKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .focused($fieldFocused)
+                        .submitLabel(.done)
+                        .onSubmit { fieldFocused = false }
                     TextField("Model", text: $aiModel)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .focused($fieldFocused)
+                        .submitLabel(.done)
+                        .onSubmit { fieldFocused = false }
                     Button(keySaved ? "Saved ✓" : "Save") {
                         Keychain.save(apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
                                       account: AIFoodChecker.keyAccount)
                         keySaved = true
+                        fieldFocused = false
                     }
                     .onChange(of: apiKey) { _, _ in keySaved = false }
                 } header: {
@@ -53,7 +61,14 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .scrollContentBackground(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { fieldFocused = false }
+                }
+            }
         }
     }
 

@@ -170,6 +170,7 @@ struct SupplementEditSheet: View {
     @State private var time: Date
     @State private var weekdays: Set<Int>
     @State private var enabled: Bool
+    @FocusState private var nameFocused: Bool
 
     init(supplement: Supplement?) {
         self.supplement = supplement
@@ -186,6 +187,9 @@ struct SupplementEditSheet: View {
             Form {
                 Section("Supplement") {
                     TextField("Name, e.g. Ginger pills", text: $name)
+                        .focused($nameFocused)
+                        .submitLabel(.done)
+                        .onSubmit { nameFocused = false }
                     DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute)
                 }
 
@@ -203,7 +207,12 @@ struct SupplementEditSheet: View {
             }
             .navigationTitle(supplement == nil ? "New reminder" : "Edit reminder")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
             .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { nameFocused = false }
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }

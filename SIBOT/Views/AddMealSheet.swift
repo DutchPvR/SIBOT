@@ -9,6 +9,7 @@ struct AddMealSheet: View {
     @State private var status: FoodStatus = .unknown
     @State private var when: Date
     @State private var startTimer = true
+    @FocusState private var textFocused: Bool
 
     init(initialDate: Date = Date()) {
         _when = State(initialValue: initialDate)
@@ -20,6 +21,7 @@ struct AddMealSheet: View {
                 Section("What did you eat?") {
                     TextField("e.g. chicken, rice and carrots", text: $text, axis: .vertical)
                         .lineLimit(1...4)
+                        .focused($textFocused)
                 }
                 Section("When") {
                     DatePicker("Time", selection: $when)
@@ -41,7 +43,12 @@ struct AddMealSheet: View {
             }
             .navigationTitle("Log a meal")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
             .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { textFocused = false }
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
