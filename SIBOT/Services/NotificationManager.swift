@@ -87,11 +87,10 @@ enum NotificationManager {
     static func schedule(_ supplement: Supplement) {
         let center = UNUserNotificationCenter.current()
         let prefix = "supp-\(supplement.id.uuidString)"
-        center.getPendingNotificationRequests { pending in
-            let old = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
-            center.removePendingNotificationRequests(withIdentifiers: old)
-            guard supplement.enabled else { return }
 
+        // Build the requests now, on the calling thread, so the model is never touched from a callback.
+        var requests: [UNNotificationRequest] = []
+        if supplement.enabled {
             let cal = Calendar.current
             if supplement.hasCourse {
                 // Up to 60 upcoming days, only on chosen weekdays inside the course.
@@ -102,26 +101,29 @@ enum NotificationManager {
                     parts.hour = supplement.minutes / 60
                     parts.minute = supplement.minutes % 60
                     guard let fire = cal.date(from: parts), fire > Date() else { continue }
-                    let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
-                    center.add(UNNotificationRequest(
+                    requests.append(UNNotificationRequest(
                         identifier: "\(prefix)-d\(parts.year ?? 0)\(parts.month ?? 0)\(parts.day ?? 0)",
                         content: content(for: supplement),
-                        trigger: trigger))
+                        trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
                 }
-                return
+            } else {
+                for weekday in supplement.weekdays where (1...7).contains(weekday) {
+                    var components = DateComponents()
+                    components.weekday = weekday
+                    components.hour = supplement.minutes / 60
+                    components.minute = supplement.minutes % 60
+                    requests.append(UNNotificationRequest(
+                        identifier: identifier(for: supplement.id, weekday: weekday),
+                        content: content(for: supplement),
+                        trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: true)))
+                }
             }
+        }
 
-            for weekday in supplement.weekdays where (1...7).contains(weekday) {
-                var components = DateComponents()
-                components.weekday = weekday
-                components.hour = supplement.minutes / 60
-                components.minute = supplement.minutes % 60
-                let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-                center.add(UNNotificationRequest(
-                    identifier: identifier(for: supplement.id, weekday: weekday),
-                    content: content(for: supplement),
-                    trigger: trigger))
-            }
+        center.getPendingNotificationRequests { pending in
+            let old = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
+            center.removePendingNotificationRequests(withIdentifiers: old)
+            for request in requests { center.add(request) }
         }
     }
 
