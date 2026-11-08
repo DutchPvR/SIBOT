@@ -27,7 +27,7 @@ enum FoodStatus: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .safe: return Theme.mint
         case .limit: return Theme.orange
-        case .avoid: return Theme.pink
+        case .avoid: return Theme.red
         case .unknown: return Theme.sky
         }
     }

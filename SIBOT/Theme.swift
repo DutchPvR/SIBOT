@@ -4,6 +4,7 @@ enum Theme {
     static let grape = Color(red: 0.42, green: 0.30, blue: 0.85)
     static let pink = Color(red: 1.00, green: 0.36, blue: 0.62)
     static let orange = Color(red: 1.00, green: 0.62, blue: 0.20)
+    static let red = Color(red: 0.93, green: 0.26, blue: 0.29)
     static let mint = Color(red: 0.14, green: 0.74, blue: 0.56)
     static let sky = Color(red: 0.25, green: 0.65, blue: 1.00)
 

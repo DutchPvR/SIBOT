@@ -20,3 +20,26 @@ final class MealEntry {
         FoodStatus(rawValue: statusRaw) ?? .unknown
     }
 }
+
+extension Sequence where Element == MealEntry {
+    /// The "worst" status among these meals: avoid beats limit beats safe.
+    /// Returns nil when there are no meals, and `.unknown` when none could be rated.
+    var worstStatus: FoodStatus? {
+        var sawAny = false
+        var sawLimit = false
+        var sawSafe = false
+        for entry in self {
+            sawAny = true
+            switch entry.status {
+            case .avoid: return .avoid
+            case .limit: sawLimit = true
+            case .safe: sawSafe = true
+            case .unknown: break
+            }
+        }
+        if !sawAny { return nil }
+        if sawLimit { return .limit }
+        if sawSafe { return .safe }
+        return .unknown
+    }
+}
