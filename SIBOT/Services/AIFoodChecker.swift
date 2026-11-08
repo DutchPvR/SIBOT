@@ -156,7 +156,7 @@ enum AIFoodChecker {
     }
 
     // Repeat lookups are free: verdicts are remembered on this device.
-    private static let cacheKey = "aiVerdictCache"
+    private static let cacheKey = "aiVerdictCache.v2" // bumped when the diet rules change
 
     private static func cachedVerdict(for food: String) -> AIFoodVerdict? {
         let all = UserDefaults.standard.dictionary(forKey: cacheKey) as? [String: [String]] ?? [:]
