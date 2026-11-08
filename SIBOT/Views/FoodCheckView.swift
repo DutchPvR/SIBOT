@@ -54,6 +54,17 @@ private struct FoodCheckContent: View {
             aiError = nil
             loggedMessage = nil
         }
+        // Nothing on the list? Check with the AI automatically once you stop typing.
+        // The task restarts (and the old one is cancelled) every time the text changes.
+        .task(id: trimmed) {
+            guard trimmed.count >= 3, FoodDatabase.shared.search(trimmed).isEmpty else { return }
+            do {
+                try await Task.sleep(nanoseconds: 700_000_000)
+            } catch {
+                return // text changed during the pause
+            }
+            await ask()
+        }
     }
 
     // MARK: - Cheat sheet
@@ -204,11 +215,11 @@ private struct FoodCheckContent: View {
                         .foregroundStyle(Theme.pink)
                 }
                 Button {
-                    ask()
+                    Task { await ask() }
                 } label: {
                     HStack {
                         if isAsking { ProgressView() }
-                        Text(isAsking ? "Asking AI…" : "Ask AI about “\(trimmed)”")
+                        Text(isAsking ? "Checking with AI…" : "Ask AI about “\(trimmed)”")
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -232,17 +243,20 @@ private struct FoodCheckContent: View {
         .tint(Theme.pink)
     }
 
-    private func ask() {
+    private func ask() async {
+        let food = trimmed
+        guard !food.isEmpty else { return }
         isAsking = true
         aiError = nil
-        let food = trimmed
-        Task {
-            do {
-                aiVerdict = try await AIFoodChecker.check(food)
-            } catch {
-                aiError = error.localizedDescription
-            }
-            isAsking = false
+        do {
+            let verdict = try await AIFoodChecker.check(food)
+            // Ignore the answer if you have kept typing since.
+            if food == trimmed { aiVerdict = verdict }
+        } catch is CancellationError {
+            // Search text changed; a newer check will run.
+        } catch {
+            if food == trimmed { aiError = error.localizedDescription }
         }
+        isAsking = false
     }
 }
