@@ -1,6 +1,7 @@
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
+import UserNotifications
 
 struct SettingsView: View {
     @State private var gapHours = MealTimerStore.gapHours
@@ -14,6 +15,8 @@ struct SettingsView: View {
     @State private var showingImporter = false
     @State private var pendingRestore: URL?
     @State private var backupMessage: String?
+    @State private var goalNotification = MealTimerStore.goalNotificationOn
+    @AppStorage(NotificationManager.remindersOnKey) private var remindersOn = true
     @AppStorage(BackupService.lastBackupKey) private var lastBackup: Double = 0
 
     var body: some View {
@@ -30,6 +33,28 @@ struct SettingsView: View {
                     Text("Fasting timer")
                 } footer: {
                     Text("The timer counts up from your last meal. The goal turns it green and sends a \"you can eat\" notification. Default is 5 hours. Changes apply the next time you tap \"I just ate\".")
+                }
+
+                Section {
+                    Toggle("Fasting goal reached", isOn: $goalNotification)
+                        .onChange(of: goalNotification) { _, on in
+                            MealTimerStore.goalNotificationOn = on
+                            if !on {
+                                UNUserNotificationCenter.current()
+                                    .removePendingNotificationRequests(withIdentifiers: [MealTimerController.notificationID])
+                            } else if let start = MealTimerStore.startDate {
+                                Task { await MealTimerController.start(at: start) }
+                            }
+                        }
+                    Toggle("Supplement reminders", isOn: $remindersOn)
+                        .onChange(of: remindersOn) { _, _ in
+                            let supplements = (try? modelContext.fetch(FetchDescriptor<Supplement>())) ?? []
+                            NotificationManager.rescheduleAll(supplements)
+                        }
+                } header: {
+                    Text("Notifications")
+                } footer: {
+                    Text("Each supplement can also be turned off on its own in Reminders.")
                 }
 
                 Section {

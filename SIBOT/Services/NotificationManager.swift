@@ -90,7 +90,7 @@ enum NotificationManager {
 
         // Build the requests now, on the calling thread, so the model is never touched from a callback.
         var requests: [UNNotificationRequest] = []
-        if supplement.enabled {
+        if supplement.enabled && remindersOn {
             let cal = Calendar.current
             if supplement.hasCourse {
                 // Up to 60 upcoming days, only on chosen weekdays inside the course.
@@ -126,6 +126,13 @@ enum NotificationManager {
             center.removePendingNotificationRequests(withIdentifiers: old)
             for request in newRequests { center.add(request) }
         }
+    }
+
+    static let remindersOnKey = "supplementRemindersOn"
+
+    /// Master switch for all supplement reminders. Default on.
+    static var remindersOn: Bool {
+        UserDefaults.standard.object(forKey: remindersOnKey) as? Bool ?? true
     }
 
     static func cancel(supplementID: UUID) {

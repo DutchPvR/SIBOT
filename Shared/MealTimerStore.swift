@@ -18,6 +18,12 @@ enum MealTimerStore {
         set { defaults.set(newValue, forKey: "gapHours") }
     }
 
+    /// Send "Fasting goal reached" when the goal gap is up. Default on.
+    static var goalNotificationOn: Bool {
+        get { defaults.object(forKey: "goalNotificationOn") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "goalNotificationOn") }
+    }
+
     static var startDate: Date? {
         get { defaults.object(forKey: "timerStart") as? Date }
         set { defaults.set(newValue, forKey: "timerStart") }

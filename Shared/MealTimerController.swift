@@ -16,7 +16,7 @@ enum MealTimerController {
         MealTimerStore.startDate = date
         MealTimerStore.endDate = end
 
-        if end > Date() {
+        if end > Date() && MealTimerStore.goalNotificationOn {
             await scheduleNotification(after: end.timeIntervalSinceNow, hours: gap)
         } else {
             UNUserNotificationCenter.current()
