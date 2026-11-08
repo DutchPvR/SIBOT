@@ -6,6 +6,7 @@ struct MonthLogView: View {
     let entries: [MealEntry]
     let checks: [DailyCheck]
     let onSelectDay: (Date) -> Void
+    let onAddToDay: (Date) -> Void
 
     private var calendar: Calendar { .current }
 
@@ -114,6 +115,9 @@ struct MonthLogView: View {
                 )
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button { onAddToDay(day) } label: { Label("Add entry", systemImage: "plus") }
+        }
     }
 
     private func legendItem(_ status: FoodStatus, _ text: String) -> some View {

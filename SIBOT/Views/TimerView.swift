@@ -6,6 +6,7 @@ struct TimerView: View {
     @State private var startDate: Date? = MealTimerStore.startDate
     @State private var endDate: Date? = MealTimerStore.endDate
     @State private var now = Date()
+    @State private var showingAte = false
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -36,6 +37,9 @@ struct TimerView: View {
             }
         }
         .onAppear(perform: refresh)
+        .sheet(isPresented: $showingAte, onDismiss: refresh) {
+            AddMealSheet(initialDate: Date(), title: "I just ate")
+        }
     }
 
     private var statusCard: some View {
@@ -79,10 +83,7 @@ struct TimerView: View {
     private var buttons: some View {
         VStack(spacing: 8) {
             Button {
-                Task {
-                    await MealTimerController.start()
-                    refresh()
-                }
+                showingAte = true
             } label: {
                 Text("I just ate")
                     .font(.headline.weight(.heavy))

@@ -9,6 +9,10 @@ struct DayLogView: View {
     let meals: [MealEntry]
     let supplementLogs: [SupplementLog]
     let check: DailyCheck?
+    let onAddAt: (Date) -> Void
+
+    @State private var editingMeal: MealEntry?
+    @State private var addingTo: Date?
 
     private var calendar: Calendar { .current }
 
@@ -16,6 +20,10 @@ struct DayLogView: View {
         VStack(spacing: 0) {
             bloatBar
             timeline
+        }
+        .sheet(item: $editingMeal) { EditMealSheet(meal: $0) }
+        .sheet(isPresented: Binding(get: { addingTo != nil }, set: { if !$0 { addingTo = nil } })) {
+            AddMealSheet(initialDate: addingTo ?? Date(), title: "Add to this meal")
         }
     }
 
@@ -128,6 +136,14 @@ struct DayLogView: View {
                     .frame(height: 1)
             }
         }
+        .contentShape(Rectangle())
+        .contextMenu {
+            Button {
+                onAddAt(calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day)
+            } label: {
+                Label("Add entry at \(hourLabel(hour))", systemImage: "plus")
+            }
+        }
     }
 
     private func mealPill(_ meal: MealEntry) -> some View {
@@ -140,6 +156,8 @@ struct DayLogView: View {
                     Button("Clear rating") { meal.symptomScore = nil }
                 }
             }
+            Button { editingMeal = meal } label: { Label("Edit", systemImage: "pencil") }
+            Button { addingTo = meal.date } label: { Label("Add another item", systemImage: "plus") }
             Button("Delete", role: .destructive) { modelContext.delete(meal) }
         } label: {
             HStack(spacing: 8) {

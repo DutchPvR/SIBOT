@@ -6,6 +6,7 @@ struct WeekLogView: View {
     let entries: [MealEntry]
     let checks: [DailyCheck]
     let onSelectDay: (Date) -> Void
+    let onAddToDay: (Date) -> Void
 
     private var calendar: Calendar { .current }
 
@@ -90,6 +91,9 @@ struct WeekLogView: View {
             )
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button { onAddToDay(day) } label: { Label("Add entry", systemImage: "plus") }
+        }
     }
 
     private var legend: some View {

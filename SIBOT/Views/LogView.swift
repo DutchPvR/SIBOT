@@ -18,6 +18,7 @@ struct LogView: View {
     @State private var mode: LogMode = .day
     @State private var selected = Date()
     @State private var showingAdd = false
+    @State private var addSeed = Date()
 
     private var calendar: Calendar { .current }
 
@@ -40,6 +41,7 @@ struct LogView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        addSeed = addDate
                         showingAdd = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
@@ -47,7 +49,7 @@ struct LogView: View {
                 }
             }
             .sheet(isPresented: $showingAdd) {
-                AddMealSheet(initialDate: addDate)
+                AddMealSheet(initialDate: addSeed)
             }
         }
     }
@@ -112,13 +114,28 @@ struct LogView: View {
                 day: selected,
                 meals: entries.filter { calendar.isDate($0.date, inSameDayAs: selected) },
                 supplementLogs: supplementLogs.filter { calendar.isDate($0.date, inSameDayAs: selected) },
-                check: dailyChecks.first { calendar.isDate($0.day, inSameDayAs: selected) }
+                check: dailyChecks.first { calendar.isDate($0.day, inSameDayAs: selected) },
+                onAddAt: openAdd
             )
         case .week:
-            WeekLogView(anchor: selected, entries: entries, checks: dailyChecks, onSelectDay: openDay)
+            WeekLogView(anchor: selected, entries: entries, checks: dailyChecks, onSelectDay: openDay, onAddToDay: addOnDay)
         case .month:
-            MonthLogView(anchor: selected, entries: entries, checks: dailyChecks, onSelectDay: openDay)
+            MonthLogView(anchor: selected, entries: entries, checks: dailyChecks, onSelectDay: openDay, onAddToDay: addOnDay)
         }
+    }
+
+    /// Long press on a day: add an entry for it (now if it is today, otherwise midday).
+    private func addOnDay(_ day: Date) {
+        if calendar.isDateInToday(day) {
+            openAdd(Date())
+        } else {
+            openAdd(calendar.date(bySettingHour: 12, minute: 0, second: 0, of: day) ?? day)
+        }
+    }
+
+    private func openAdd(_ date: Date) {
+        addSeed = date
+        showingAdd = true
     }
 
     private func openDay(_ day: Date) {

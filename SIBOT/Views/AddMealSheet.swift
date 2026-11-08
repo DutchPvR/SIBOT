@@ -1,85 +1,161 @@
 import SwiftData
 import SwiftUI
 
+/// Log one meal made of several items, all at the same time.
+/// Used for "I just ate", the + button in the Log, long-press on a day, and "Add another item".
 struct AddMealSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @State private var text = ""
-    @State private var status: FoodStatus = .unknown
-    @State private var when: Date
-    @State private var startTimer = true
-    @FocusState private var textFocused: Bool
+    struct Item: Identifiable {
+        let id = UUID()
+        var text: String
+        var status: FoodStatus
+    }
 
-    init(initialDate: Date = Date()) {
+    let title: String
+    @State private var when: Date
+    @State private var items: [Item] = []
+    @State private var draft = ""
+    @FocusState private var draftFocused: Bool
+
+    init(initialDate: Date = Date(), title: String = "Log a meal") {
+        self.title = title
         _when = State(initialValue: initialDate)
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("What did you eat?") {
-                    TextField("e.g. chicken, rice and carrots", text: $text, axis: .vertical)
-                        .lineLimit(1...4)
-                        .focused($textFocused)
-                }
-                Section("When") {
-                    DatePicker("Time", selection: $when)
-                }
-                Section("How does it fit the diet?") {
-                    Picker("Status", selection: $status) {
-                        ForEach(FoodStatus.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    Text("Filled in from the food list when it recognizes a word. You can change it.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
                 Section {
-                    Toggle("Restart the fasting timer", isOn: $startTimer)
+                    ForEach(items) { item in
+                        HStack(spacing: 12) {
+                            Button {
+                                cycleStatus(item)
+                            } label: {
+                                StatusDot(status: item.status, size: 14)
+                                    .frame(width: 30, height: 30)
+                            }
+                            .buttonStyle(.plain)
+                            Text(item.text)
+                            Spacer()
+                            Text(item.status.label)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onDelete { items.remove(atOffsets: $0) }
+
+                    HStack {
+                        TextField("Add an item, e.g. chicken", text: $draft)
+                            .focused($draftFocused)
+                            .submitLabel(.done)
+                            .onSubmit(addDraft)
+                        Button("Add", action: addDraft)
+                            .disabled(trimmedDraft.isEmpty)
+                    }
+                } header: {
+                    Text("What did you eat?")
                 } footer: {
-                    Text("Counts up from the time above. Only applies if that time is in the past 24 hours or just now.")
+                    Text("Add as many items as you like. Tap a dot to change its status.")
+                }
+
+                Section {
+                    DatePicker("Time", selection: $when)
+                } footer: {
+                    Text("The fasting timer follows your most recent meal in the log.")
                 }
             }
-            .navigationTitle("Log a meal")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("Done") { textFocused = false }
+                    Button("Done") { draftFocused = false }
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-            .onChange(of: text) { _, newValue in
-                status = FoodDatabase.shared.bestStatus(for: newValue) ?? .unknown
-            }
+            .onAppear { draftFocused = true }
         }
     }
 
-    private func save() {
-        let entry = MealEntry(
-            date: when,
-            text: text.trimmingCharacters(in: .whitespacesAndNewlines),
-            status: status
-        )
-        modelContext.insert(entry)
+    private var trimmedDraft: String {
+        draft.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
-        // Only restart the timer for meals from the last 24 hours (or a few minutes ahead),
-        // and never move it backwards past a more recent meal.
-        let age = -when.timeIntervalSinceNow
-        let lastMeal = MealTimerStore.startDate ?? .distantPast
-        let shouldStart = startTimer && age < 24 * 3600 && age > -300 && when >= lastMeal
-        let mealTime = min(when, Date())
+    private func addDraft() {
+        let text = trimmedDraft
+        guard !text.isEmpty else { return }
+        let status = FoodDatabase.shared.bestStatus(for: text) ?? .unknown
+        items.append(Item(text: text, status: status))
+        draft = ""
+        draftFocused = true
+    }
+
+    private func cycleStatus(_ item: Item) {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        let all = FoodStatus.allCases
+        let next = (all.firstIndex(of: items[index].status) ?? 0) + 1
+        items[index].status = all[next % all.count]
+    }
+
+    private func save() {
+        addDraft()
+        // Saving with nothing typed still logs the time of the meal.
+        let toSave = items.isEmpty ? [Item(text: "Meal", status: .unknown)] : items
+        for item in toSave {
+            modelContext.insert(MealEntry(date: when, text: item.text, status: item.status))
+        }
         dismiss()
-        if shouldStart {
-            Task { await MealTimerController.start(at: mealTime) }
+    }
+}
+
+/// Edit one logged item: its text, status and time.
+struct EditMealSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Bindable var meal: MealEntry
+    @FocusState private var focused: Bool
+
+    private var statusBinding: Binding<FoodStatus> {
+        Binding(get: { meal.status }, set: { meal.statusRaw = $0.rawValue })
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("What") {
+                    TextField("Food", text: $meal.text, axis: .vertical)
+                        .lineLimit(1...4)
+                        .focused($focused)
+                }
+                Section("How does it fit the diet?") {
+                    Picker("Status", selection: statusBinding) {
+                        ForEach(FoodStatus.allCases) { Text($0.label).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                Section("When") {
+                    DatePicker("Time", selection: $meal.date)
+                }
+            }
+            .navigationTitle("Edit")
+            .navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { focused = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
     }
 }
