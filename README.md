@@ -78,7 +78,7 @@ developer.apple.com > Certificates, Identifiers & Profiles > Identifiers > App G
 ## AI fallback (optional)
 
 In **Settings**, paste an [OpenRouter](https://openrouter.ai) API key and, if you like, change the model name
-(default `anthropic/claude-sonnet-4.5`; any model from openrouter.ai/models works). The key is stored in the
+(default `anthropic/claude-haiku-5.5`; any model from openrouter.ai/models works). The key is stored in the
 iPhone Keychain and sent only to openrouter.ai. Without a key, the app still works with the bundled list.
 
 ## Project layout
