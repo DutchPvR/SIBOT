@@ -120,10 +120,11 @@ enum NotificationManager {
             }
         }
 
+        let newRequests = requests
         center.getPendingNotificationRequests { pending in
             let old = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
             center.removePendingNotificationRequests(withIdentifiers: old)
-            for request in requests { center.add(request) }
+            for request in newRequests { center.add(request) }
         }
     }
 

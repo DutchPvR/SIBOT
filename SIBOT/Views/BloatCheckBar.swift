@@ -115,11 +115,7 @@ struct BloatCheckBar: View {
             setBloat(value)
         } label: {
             HStack(spacing: 10) {
-                ZStack {
-                    Circle().strokeBorder(Color.primary, lineWidth: 1.5)
-                    if value { Circle().fill(Color.primary) }
-                }
-                .frame(width: 14, height: 14)
+                BloatMark(bloated: value, size: 14)
                 Text(title)
                     .font(.subheadline.weight(selected ? .heavy : .medium))
             }
@@ -157,12 +153,15 @@ struct BloatCheckBar: View {
 
     /// Change the day's entry, creating one (without a bloat answer) if needed.
     private func edit(_ change: (DailyCheck) -> Void) {
+        let entry: DailyCheck
         if let check {
-            change(check)
+            entry = check
         } else {
-            let entry = DailyCheck(day: day, bloated: false, answered: false)
+            entry = DailyCheck(day: day, bloated: false, answered: false)
             modelContext.insert(entry)
-            change(entry)
         }
+        change(entry)
+        // Do not keep entries that hold nothing (e.g. bowel count tapped back to 0).
+        if entry.isEmpty { modelContext.delete(entry) }
     }
 }

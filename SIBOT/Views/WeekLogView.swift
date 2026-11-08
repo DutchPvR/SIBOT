@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// A week as seven rows, each with one colored block per meal.
+/// A week as seven plain rows: one dot per item, and the bloat answer on the right.
 struct WeekLogView: View {
     let anchor: Date
-    let entries: [MealEntry]
-    let checks: [DailyCheck]
+    let mealsByDay: [Date: [MealEntry]]
+    let checksByDay: [Date: DailyCheck]
     let onSelectDay: (Date) -> Void
     let onAddToDay: (Date) -> Void
 
@@ -17,11 +17,12 @@ struct WeekLogView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 10) {
+            VStack(spacing: 0) {
                 ForEach(days, id: \.self) { day in
+                    Hairline()
                     dayRow(day)
                 }
-                legend
+                Hairline()
             }
             .padding(.horizontal)
             .padding(.bottom, 24)
@@ -29,88 +30,61 @@ struct WeekLogView: View {
     }
 
     private func dayRow(_ day: Date) -> some View {
-        let meals = entries.filter { calendar.isDate($0.date, inSameDayAs: day) }
-        let worst = meals.worstStatus
+        let meals = (mealsByDay[day] ?? []).sorted { $0.date < $1.date }
         let isToday = calendar.isDateInToday(day)
-        let check = checks.first { calendar.isDate($0.day, inSameDayAs: day) }
+        let bloated = checksByDay[day]?.answer
 
         return Button {
             onSelectDay(day)
         } label: {
-            HStack(spacing: 12) {
-                VStack(spacing: 2) {
-                    Text(day.formatted(.dateTime.weekday(.abbreviated)))
-                        .font(.system(.caption).weight(.bold))
+            HStack(spacing: 14) {
+                VStack(spacing: 0) {
+                    Text(day.formatted(.dateTime.weekday(.abbreviated)).uppercased())
+                        .font(.system(size: 10, weight: .heavy))
+                        .tracking(1)
                         .foregroundStyle(isToday ? Theme.purple : .secondary)
                     Text(day.formatted(.dateTime.day()))
-                        .font(.system(.title3).weight(.heavy))
-                        .foregroundStyle(.primary)
+                        .font(.title3.weight(.heavy))
+                        .foregroundStyle(isToday ? Theme.purple : .primary)
                 }
-                .frame(width: 44)
+                .frame(width: 40)
 
-                if meals.isEmpty {
-                    Text("Nothing logged")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-                } else {
-                    // One block per meal, in time order. Wraps if there are many.
-                    let blocks = meals.sorted { $0.date < $1.date }
-                    HStack(spacing: 6) {
-                        ForEach(blocks.prefix(8)) { meal in
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(meal.status.color)
-                                .frame(width: 24, height: 24)
-                        }
-                        if blocks.count > 8 {
-                            Text("+\(blocks.count - 8)")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.secondary)
-                        }
+                HStack(spacing: 5) {
+                    ForEach(meals.prefix(10)) { meal in
+                        StatusDot(status: meal.status, size: 10)
+                    }
+                    if meals.count > 10 {
+                        Text("+\(meals.count - 10)")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
                     }
                 }
                 Spacer(minLength: 0)
-                if let check, let bloated = check.answer {
-                    Text(bloated ? "BLOATED" : "NO BLOAT")
-                        .font(.system(size: 10, weight: .heavy))
-                        .tracking(0.8)
-                        .foregroundStyle(bloated ? Theme.red : Theme.green)
+                if let bloated {
+                    BloatMark(bloated: bloated)
                 }
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.background, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
-            .overlay(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill((worst?.color ?? Color.secondary).opacity(worst == nil ? 0.25 : 1))
-                    .frame(width: 5)
-                    .padding(.vertical, 10)
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(isToday ? Theme.purple : .clear, lineWidth: 1.5)
-            )
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .contextMenu {
             Button { onAddToDay(day) } label: { Label("Add entry", systemImage: "plus") }
         }
     }
+}
 
-    private var legend: some View {
-        HStack(spacing: 14) {
-            legendItem(.safe)
-            legendItem(.limit)
-            legendItem(.avoid)
-        }
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .padding(.top, 4)
-    }
+/// Ring = no bloat, filled dot = bloated. Used across the Log.
+struct BloatMark: View {
+    let bloated: Bool
+    var color: Color = .primary
+    var size: CGFloat = 10
 
-    private func legendItem(_ status: FoodStatus) -> some View {
-        HStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 3).fill(status.color).frame(width: 12, height: 12)
-            Text(status.label)
+    var body: some View {
+        ZStack {
+            Circle().strokeBorder(color, lineWidth: 1.5)
+            if bloated { Circle().fill(color) }
         }
+        .frame(width: size, height: size)
     }
 }

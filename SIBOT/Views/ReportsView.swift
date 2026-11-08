@@ -20,11 +20,8 @@ struct ReportsView: View {
         ReportBuilder.Input(days: days, meals: meals, checks: checks, supplements: supplements, supplementLogs: supplementLogs)
     }
 
-    private var insight: InsightResult {
-        Insights.analyze(meals: meals, checks: checks)
-    }
-
     var body: some View {
+        let insight = Insights.analyze(meals: meals, checks: checks)
         NavigationStack {
             List {
                 Section {

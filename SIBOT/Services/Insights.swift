@@ -24,6 +24,7 @@ struct InsightResult {
 enum Insights {
     static func analyze(meals: [MealEntry], checks: [DailyCheck], windowDays: Int = 2) -> InsightResult {
         let cal = Calendar.current
+        let byDay = Dictionary(grouping: meals) { cal.startOfDay(for: $0.date) }
         var bloatedSets: [Set<String>] = []
         var clearSets: [Set<String>] = []
         var bloatedRisk: [Int] = []
@@ -32,9 +33,10 @@ enum Insights {
         for check in checks {
             guard let bloated = check.answer else { continue }
             let end = cal.startOfDay(for: check.day)
-            guard let start = cal.date(byAdding: .day, value: -windowDays, to: end),
-                  let stop = cal.date(byAdding: .day, value: 1, to: end) else { continue }
-            let window = meals.filter { $0.date >= start && $0.date < stop }
+            let window = (0...windowDays).flatMap { offset -> [MealEntry] in
+                guard let day = cal.date(byAdding: .day, value: -offset, to: end) else { return [] }
+                return byDay[day] ?? []
+            }
             let foods = Set(window.flatMap { foodNames($0.text) })
             let risk = window.filter { $0.status == .limit || $0.status == .avoid }.count
             if bloated {
@@ -45,21 +47,16 @@ enum Insights {
         }
 
         let allFoods = Set(bloatedSets.flatMap { $0 })
-        var suspects: [FoodSuspect] = []
+        var scored: [(suspect: FoodSuspect, gap: Double)] = []
         for food in allFoods {
             let b = bloatedSets.filter { $0.contains(food) }.count
             let c = clearSets.filter { $0.contains(food) }.count
-            let bloatRate = Double(b) / Double(max(bloatedSets.count, 1))
-            let clearRate = Double(c) / Double(max(clearSets.count, 1))
-            if b >= 2 && bloatRate > clearRate + 0.2 {
-                suspects.append(FoodSuspect(food: food, bloatedWindows: b, clearWindows: c))
+            let gap = Double(b) / Double(max(bloatedSets.count, 1)) - Double(c) / Double(max(clearSets.count, 1))
+            if b >= 2 && gap > 0.2 {
+                scored.append((FoodSuspect(food: food, bloatedWindows: b, clearWindows: c), gap))
             }
         }
-        suspects.sort {
-            let l = Double($0.bloatedWindows) / Double(max(bloatedSets.count, 1)) - Double($0.clearWindows) / Double(max(clearSets.count, 1))
-            let r = Double($1.bloatedWindows) / Double(max(bloatedSets.count, 1)) - Double($1.clearWindows) / Double(max(clearSets.count, 1))
-            return l > r
-        }
+        let suspects = scored.sorted { $0.gap > $1.gap }.map(\.suspect)
 
         func average(_ values: [Int]) -> Double {
             values.isEmpty ? 0 : Double(values.reduce(0, +)) / Double(values.count)

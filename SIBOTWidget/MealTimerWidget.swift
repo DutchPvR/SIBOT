@@ -110,14 +110,7 @@ struct MealTimerWidget: Widget {
         StaticConfiguration(kind: kind, provider: MealTimerProvider()) { entry in
             MealTimerWidgetView(entry: entry)
                 .containerBackground(for: .widget) {
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.44, green: 0.27, blue: 0.86).opacity(0.18),
-                            Color(red: 1.00, green: 0.36, blue: 0.62).opacity(0.14)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    Color(uiColor: .systemBackground)
                 }
         }
         .configurationDisplayName("Fasting timer")

@@ -1,49 +1,42 @@
-import Combine
+import SwiftData
 import SwiftUI
 
 /// Fasting timer: counts UP from your last meal so you can see how long it has been.
 struct TimerView: View {
-    @State private var startDate: Date? = MealTimerStore.startDate
-    @State private var endDate: Date? = MealTimerStore.endDate
-    @State private var now = Date()
+    @Query(MealTimerSync.recentMeals) private var meals: [MealEntry]
     @State private var showingAte = false
 
-    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
-    private var goalReached: Bool {
-        if let endDate { return now >= endDate }
-        return false
+    /// The latest meal in the log, or a newer tap on the widget that the log has not caught up with.
+    private var startDate: Date? {
+        let logged = MealTimerSync.latestMeal(meals)
+        guard let stored = MealTimerStore.startDate else { return logged }
+        guard let logged else { return stored }
+        return max(logged, stored)
     }
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Theme.background
+            // The counter text ticks on its own; the rest only needs a refresh now and then.
+            TimelineView(.periodic(from: .now, by: 30)) { context in
                 VStack(spacing: 24) {
-                    statusCard
+                    statusCard(now: context.date)
                         .padding(.top, 40)
                     Spacer()
                     buttons
                 }
                 .padding()
             }
+            .background(Theme.background)
             .navigationTitle("Fasting")
         }
-        .onReceive(ticker) { date in
-            now = date
-            // Pick up changes made from the widget or Live Activity.
-            if startDate != MealTimerStore.startDate {
-                refresh()
-            }
-        }
-        .onAppear(perform: refresh)
-        .sheet(isPresented: $showingAte, onDismiss: refresh) {
+        .sheet(isPresented: $showingAte) {
             AddMealSheet(initialDate: Date(), title: "I just ate")
         }
     }
 
-    private var statusCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func statusCard(now: Date) -> some View {
+        let goalReached = startDate.map { now.timeIntervalSince($0) >= goalSeconds } ?? false
+        return VStack(alignment: .leading, spacing: 10) {
             if let startDate {
                 Text("SINCE YOUR LAST MEAL")
                     .font(.caption.weight(.heavy))
@@ -57,7 +50,7 @@ struct TimerView: View {
                     .lineLimit(1)
                     .foregroundStyle(goalReached ? Theme.green : Theme.ink)
 
-                ProgressView(value: progress)
+                ProgressView(value: progress(now: now))
                     .tint(goalReached ? Theme.green : Theme.purple)
                     .padding(.top, 8)
 
@@ -81,27 +74,25 @@ struct TimerView: View {
     }
 
     private var buttons: some View {
-        VStack(spacing: 8) {
-            Button {
-                showingAte = true
-            } label: {
-                Text("I just ate")
-                    .font(.headline.weight(.heavy))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.capsule)
-            .tint(Theme.purple)
+        Button {
+            showingAte = true
+        } label: {
+            Text("I just ate")
+                .font(.headline.weight(.heavy))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
         }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .tint(Theme.purple)
     }
 
+    private var goalSeconds: Double { MealTimerStore.gapHours * 3600 }
+
     /// 0...1 progress toward the goal gap.
-    private var progress: Double {
-        guard let startDate else { return 0 }
-        let goal = MealTimerStore.gapHours * 3600
-        guard goal > 0 else { return 1 }
-        return min(max(now.timeIntervalSince(startDate) / goal, 0), 1)
+    private func progress(now: Date) -> Double {
+        guard let startDate, goalSeconds > 0 else { return 0 }
+        return min(max(now.timeIntervalSince(startDate) / goalSeconds, 0), 1)
     }
 
     /// Time of the latest meal in the log; adds the weekday when it was not today.
@@ -115,11 +106,5 @@ struct TimerView: View {
     private var hoursText: String {
         let hours = MealTimerStore.gapHours
         return hours == hours.rounded() ? String(Int(hours)) : String(format: "%.1f", hours)
-    }
-
-    private func refresh() {
-        startDate = MealTimerStore.startDate
-        endDate = MealTimerStore.endDate
-        now = Date()
     }
 }

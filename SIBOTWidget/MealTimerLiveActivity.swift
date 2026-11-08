@@ -23,7 +23,7 @@ struct MealTimerLiveActivity: Widget {
                     .frame(maxWidth: 140, alignment: .trailing)
             }
             .padding()
-            .activityBackgroundTint(Color(red: 0.44, green: 0.27, blue: 0.86).opacity(0.18))
+            .activityBackgroundTint(nil)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {

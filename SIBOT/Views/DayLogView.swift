@@ -86,9 +86,7 @@ struct DayLogView: View {
             .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
             .padding(.vertical, 6)
             .overlay(alignment: .top) {
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.25))
-                    .frame(height: 1)
+                Hairline()
             }
         }
         .contentShape(Rectangle())
@@ -133,32 +131,24 @@ struct DayLogView: View {
                 Spacer(minLength: 0)
             }
             .foregroundStyle(.primary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.vertical, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(meal.status.color.opacity(0.18), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
-            .overlay(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(meal.status.color)
-                    .frame(width: 4)
-                    .padding(.vertical, 6)
-            }
+            .contentShape(Rectangle())
         }
     }
 
     private func supplementPill(_ log: SupplementLog) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: "pills").foregroundStyle(Theme.purple)
-            Text("\(log.supplementName) · \(log.taken ? "taken" : "skipped")")
-                .font(.system(.footnote).weight(.semibold))
-            Spacer(minLength: 0)
-            Text(log.date.formatted(date: .omitted, time: .shortened))
+            Image(systemName: "pills")
                 .font(.caption)
+                .foregroundStyle(Theme.purple)
+                .frame(width: 10)
+            Text("\(log.supplementName) · \(log.taken ? "taken" : "skipped")")
+                .font(.footnote)
                 .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Theme.purple.opacity(0.10), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+        .padding(.vertical, 2)
     }
 
     private func symptomLabel(_ score: Int) -> String {

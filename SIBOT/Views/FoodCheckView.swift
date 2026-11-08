@@ -9,7 +9,7 @@ struct FoodCheckView: View {
     var body: some View {
         NavigationStack {
             FoodCheckContent(query: query)
-                .navigationTitle("Can I eat this?")
+                .navigationTitle("Check")
                 .searchable(
                     text: $query,
                     placement: .navigationBarDrawer(displayMode: .automatic),
@@ -131,6 +131,7 @@ private struct FoodCheckContent: View {
 
     @ViewBuilder
     private var searchResults: some View {
+        let results = self.results
         if trimmed.isEmpty {
             VStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
@@ -143,8 +144,9 @@ private struct FoodCheckContent: View {
         } else {
             ForEach(results) { item in
                 resultCard(item)
+                Hairline()
             }
-            askAICard
+            askAICard(onList: !results.isEmpty)
             if let loggedMessage {
                 Text(loggedMessage)
                     .font(.footnote)
@@ -187,17 +189,16 @@ private struct FoodCheckContent: View {
         .card()
     }
 
-    private var askAICard: some View {
+    private func askAICard(onList: Bool) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(results.isEmpty ? "Not on the list" : "Not what you meant?")
+            Text(onList ? "Not what you meant?" : "Not on the list")
                 .font(.system(.headline))
 
             if let aiVerdict {
                 HStack {
-                    Text("AI guess")
-                        .font(.caption.weight(.bold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                    Text("AI GUESS")
+                        .font(.caption.weight(.heavy))
+                        .tracking(1)
                         .foregroundStyle(Theme.purple)
                     Spacer()
                     StatusBadge(status: aiVerdict.status)
@@ -214,7 +215,7 @@ private struct FoodCheckContent: View {
                         PersonalFoods.set(trimmed, to: aiVerdict.status)
                         refreshTick += 1
                     } label: {
-                        Label("Save to my list", systemImage: "bookmark")
+                        Text("Save to my list")
                             .font(.subheadline.weight(.semibold))
                     }
                     .tint(Theme.purple)
@@ -234,7 +235,8 @@ private struct FoodCheckContent: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
                 .tint(Theme.purple)
                 .disabled(isAsking)
             }
@@ -248,7 +250,7 @@ private struct FoodCheckContent: View {
             modelContext.insert(MealEntry(text: text, status: status))
             loggedMessage = "Logged “\(text)”."
         } label: {
-            Label("Log it", systemImage: "plus.circle.fill")
+            Text("Log it")
                 .font(.subheadline.weight(.semibold))
         }
         .tint(Theme.purple)

@@ -3,8 +3,8 @@ import SwiftUI
 /// A month as a calendar grid. Each day is green, orange or red by the worst food that day.
 struct MonthLogView: View {
     let anchor: Date
-    let entries: [MealEntry]
-    let checks: [DailyCheck]
+    let mealsByDay: [Date: [MealEntry]]
+    let checksByDay: [Date: DailyCheck]
     let onSelectDay: (Date) -> Void
     let onAddToDay: (Date) -> Void
 
@@ -48,30 +48,14 @@ struct MonthLogView: View {
                     }
                 }
 
-                HStack(spacing: 14) {
-                    legendItem(.safe, "All good")
-                    legendItem(.limit, "Some limits")
+                HStack(spacing: 12) {
+                    legendItem(.safe, "Good")
+                    legendItem(.limit, "Limits")
                     legendItem(.avoid, "Not good")
-                    HStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 3).fill(Color.secondary.opacity(0.2)).frame(width: 12, height: 12)
-                        Text("Empty")
-                    }
+                    HStack(spacing: 4) { BloatMark(bloated: true, size: 8); Text("Bloated") }
+                    HStack(spacing: 4) { BloatMark(bloated: false, size: 8); Text("No bloat") }
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.top, 6)
-
-                HStack(spacing: 14) {
-                    HStack(spacing: 4) {
-                        Circle().fill(Color.primary).frame(width: 8, height: 8)
-                        Text("Bloated")
-                    }
-                    HStack(spacing: 4) {
-                        Circle().strokeBorder(Color.primary, lineWidth: 1.5).frame(width: 8, height: 8)
-                        Text("No bloat")
-                    }
-                }
-                .font(.caption)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .padding(.top, 6)
             }
@@ -81,10 +65,9 @@ struct MonthLogView: View {
     }
 
     private func dayCell(_ day: Date) -> some View {
-        let meals = entries.filter { calendar.isDate($0.date, inSameDayAs: day) }
-        let worst = meals.worstStatus
+        let worst = (mealsByDay[day] ?? []).worstStatus
         let isToday = calendar.isDateInToday(day)
-        let check = checks.first { calendar.isDate($0.day, inSameDayAs: day) }
+        let check = checksByDay[day]
         let fill: Color = {
             guard let worst else { return Color.secondary.opacity(0.15) }
             return worst == .unknown ? Color.secondary.opacity(0.5) : worst.color
@@ -100,12 +83,8 @@ struct MonthLogView: View {
                 .frame(height: 46)
                 .background(fill, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                 .overlay(alignment: .bottom) {
-                    if let check, let bloated = check.answer {
-                        // Filled dot = bloated, ring = no bloat.
-                        Circle()
-                            .strokeBorder(worst == nil ? Color.primary : Color.white, lineWidth: 1.5)
-                            .background(Circle().fill(bloated ? (worst == nil ? Color.primary : Color.white) : Color.clear))
-                            .frame(width: 8, height: 8)
+                    if let bloated = check?.answer {
+                        BloatMark(bloated: bloated, color: worst == nil ? .primary : .white, size: 8)
                             .padding(.bottom, 5)
                     }
                 }
@@ -122,7 +101,7 @@ struct MonthLogView: View {
 
     private func legendItem(_ status: FoodStatus, _ text: String) -> some View {
         HStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 3).fill(status.color).frame(width: 12, height: 12)
+            StatusDot(status: status, size: 8)
             Text(text)
         }
     }

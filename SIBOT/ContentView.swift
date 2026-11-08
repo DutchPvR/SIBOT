@@ -4,7 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-    @Query(sort: \MealEntry.date) private var meals: [MealEntry]
+    @Query(MealTimerSync.recentMeals) private var meals: [MealEntry]
 
     var body: some View {
         TabView {

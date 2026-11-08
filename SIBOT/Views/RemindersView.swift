@@ -4,7 +4,14 @@ import SwiftUI
 struct RemindersView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Supplement.minutes) private var supplements: [Supplement]
-    @Query(sort: \SupplementLog.date, order: .reverse) private var logs: [SupplementLog]
+    /// Only recent answers are needed here (today, the 14-day count and the short history).
+    @Query(RemindersView.recentLogs) private var logs: [SupplementLog]
+
+    nonisolated private static var recentLogs: FetchDescriptor<SupplementLog> {
+        var descriptor = FetchDescriptor<SupplementLog>(sortBy: [SortDescriptor(\.date, order: .reverse)])
+        descriptor.fetchLimit = 300
+        return descriptor
+    }
 
     @State private var editing: Supplement?
     @State private var showingNew = false
@@ -35,7 +42,6 @@ struct RemindersView: View {
                         Section("History") {
                             ForEach(logs.prefix(20)) { log in
                                 HStack {
-                                    Image(systemName: log.taken ? "checkmark.circle.fill" : "forward.circle")
                                     VStack(alignment: .leading) {
                                         Text(log.supplementName)
                                             .font(.system(.body).weight(.semibold))
@@ -45,8 +51,8 @@ struct RemindersView: View {
                                     }
                                     Spacer()
                                     Text(log.taken ? "Taken" : "Skipped")
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(log.taken ? Theme.green : Theme.amber)
+                                        .font(.subheadline.weight(log.taken ? .semibold : .regular))
+                                        .foregroundStyle(log.taken ? Color.primary : Color.secondary)
                                 }
                             }
                         }
@@ -60,7 +66,7 @@ struct RemindersView: View {
                     Button {
                         showingNew = true
                     } label: {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: "plus")
                     }
                 }
             }
@@ -102,36 +108,26 @@ struct RemindersView: View {
                     if !supplement.enabled {
                         Text("Paused")
                             .font(.caption.weight(.bold))
-                            .foregroundStyle(Theme.amber)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
                 Button {
                     editing = supplement
                 } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.title3)
+                    Text("Edit")
+                        .font(.subheadline)
                 }
                 .buttonStyle(.borderless)
                 .tint(Theme.purple)
             }
 
             HStack(spacing: 10) {
-                answerButton(
-                    title: "Taken",
-                    systemImage: "checkmark.circle.fill",
-                    color: Theme.green,
-                    selected: log?.taken == true
-                ) {
+                answerButton(title: "Taken", selected: log?.taken == true) {
                     SupplementLogger.record(
                         supplementID: supplement.id, name: supplement.name, taken: true, in: modelContext)
                 }
-                answerButton(
-                    title: "Skipped",
-                    systemImage: "forward.circle.fill",
-                    color: Theme.amber,
-                    selected: log?.taken == false
-                ) {
+                answerButton(title: "Skipped", selected: log?.taken == false) {
                     SupplementLogger.record(
                         supplementID: supplement.id, name: supplement.name, taken: false, in: modelContext)
                 }
@@ -144,29 +140,22 @@ struct RemindersView: View {
                     .foregroundStyle(.secondary)
                 }
             }
-            if log == nil {
-                Text("Not logged yet today")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
         }
         .padding(.vertical, 4)
     }
 
-    private func answerButton(
-        title: String,
-        systemImage: String,
-        color: Color,
-        selected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
+    /// Outlined, like the bloat buttons; the chosen answer gets a dark outline and bold text.
+    private func answerButton(title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(.subheadline).weight(.bold))
-                .padding(.horizontal, 12)
+            Text(title)
+                .font(.subheadline.weight(selected ? .heavy : .medium))
+                .foregroundStyle(selected ? Color.primary : Color.secondary)
+                .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(selected ? color : color.opacity(0.15), in: Capsule())
-                .foregroundStyle(selected ? Color.white : color)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .stroke(selected ? Color.primary : Theme.hairline, lineWidth: selected ? 1.5 : 1)
+                )
         }
         .buttonStyle(.borderless)
     }

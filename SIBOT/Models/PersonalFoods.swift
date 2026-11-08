@@ -5,9 +5,20 @@ import SwiftData
 enum PersonalFoods {
     private static let key = "personalFoods"
 
+    /// Read from disk once, then kept in memory.
+    private static var cache: [String: String]?
+
     static var all: [String: String] {
-        get { UserDefaults.standard.dictionary(forKey: key) as? [String: String] ?? [:] }
-        set { UserDefaults.standard.set(newValue, forKey: key) }
+        get {
+            if let cache { return cache }
+            let loaded = UserDefaults.standard.dictionary(forKey: key) as? [String: String] ?? [:]
+            cache = loaded
+            return loaded
+        }
+        set {
+            cache = newValue
+            UserDefaults.standard.set(newValue, forKey: key)
+        }
     }
 
     private static func normalize(_ name: String) -> String {

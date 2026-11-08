@@ -27,6 +27,8 @@ final class FoodDatabase {
 
     let foods: [FoodItem]
     let source: String
+    /// Lowercased name + aliases per food, worked out once instead of on every keystroke.
+    private let names: [[String]]
 
     private init() {
         if let url = Bundle.main.url(forResource: "foods", withExtension: "json"),
@@ -38,6 +40,7 @@ final class FoodDatabase {
             foods = []
             source = "Food list could not be loaded."
         }
+        names = foods.map { [$0.name.lowercased()] + $0.aliases.map { $0.lowercased() } }
     }
 
     /// Matches a free-text query against names and aliases. Best matches first.
@@ -46,10 +49,9 @@ final class FoodDatabase {
         guard !q.isEmpty else { return [] }
 
         var scored: [(FoodItem, Int)] = []
-        for item in foods {
-            let names = [item.name.lowercased()] + item.aliases.map { $0.lowercased() }
+        for (item, itemNames) in zip(foods, names) {
             var best = 0
-            for n in names {
+            for n in itemNames {
                 if n == q { best = max(best, 100) }
                 else if n.hasPrefix(q) { best = max(best, 70) }
                 else if n.contains(q) { best = max(best, 50) }
@@ -67,18 +69,18 @@ final class FoodDatabase {
 
     /// Best single match for a logged meal, or nil.
     func bestStatus(for text: String) -> FoodStatus? {
-        let words = text.lowercased()
+        let lower = text.lowercased()
+        let words = lower
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
             .filter { $0.count >= 3 }
 
         var found: [FoodStatus] = []
-        for item in foods {
-            let names = [item.name.lowercased()] + item.aliases.map { $0.lowercased() }
-            if names.contains(where: { text.lowercased().contains($0) || words.contains($0) }) {
+        for (item, itemNames) in zip(foods, names) {
+            if itemNames.contains(where: { lower.contains($0) || words.contains($0) }) {
                 found.append(item.foodStatus)
             }
         }
-        for (name, raw) in PersonalFoods.all where text.lowercased().contains(name) {
+        for (name, raw) in PersonalFoods.all where lower.contains(name) {
             if let status = FoodStatus(rawValue: raw) { found.append(status) }
         }
         if found.contains(.avoid) { return .avoid }

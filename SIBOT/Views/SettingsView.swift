@@ -40,7 +40,7 @@ struct SettingsView: View {
                         .submitLabel(.done)
                         .onSubmit { fieldFocused = false }
                     Picker("Model", selection: modelChoice) {
-                        ForEach(Self.models, id: \.id) { Text($0.name).tag($0.id) }
+                        ForEach(Self.models) { Text($0.name).tag($0.id) }
                         Text("Custom…").tag(Self.customTag)
                     }
                     if isCustomModel {
@@ -51,7 +51,7 @@ struct SettingsView: View {
                             .submitLabel(.done)
                             .onSubmit { fieldFocused = false }
                     }
-                    Button(keySaved ? "Saved ✓" : "Save") {
+                    Button(keySaved ? "Saved" : "Save") {
                         Keychain.save(apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
                                       account: AIFoodChecker.keyAccount)
                         keySaved = true
@@ -141,10 +141,15 @@ struct SettingsView: View {
     private static let customTag = "__custom__"
 
     /// Cheap models that handle a one-line food rating well. The first is the default.
-    private static let models: [(id: String, name: String)] = [
-        ("anthropic/claude-haiku-5.5", "Claude Haiku 5.5 (cheap, recommended)"),
-        ("google/gemini-3.7-flash", "Gemini 3.7 Flash (cheap)"),
-        ("anthropic/claude-sonnet-5", "Claude Sonnet 5 (best, pricier)")
+    private struct ModelChoice: Identifiable {
+        let id: String
+        let name: String
+    }
+
+    private static let models = [
+        ModelChoice(id: "anthropic/claude-haiku-5.5", name: "Claude Haiku 5.5 (cheap, recommended)"),
+        ModelChoice(id: "google/gemini-3.7-flash", name: "Gemini 3.7 Flash (cheap)"),
+        ModelChoice(id: "anthropic/claude-sonnet-5", name: "Claude Sonnet 5 (best, pricier)")
     ]
 
     @State private var customSelected = false

@@ -6,7 +6,19 @@ import SwiftUI
 struct AddMealSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \MealEntry.date, order: .reverse) private var pastMeals: [MealEntry]
+    @Query(AddMealSheet.pastMealsDescriptor) private var pastMeals: [MealEntry]
+
+    /// The last 300 items are plenty to find what you eat most.
+    nonisolated private static var pastMealsDescriptor: FetchDescriptor<MealEntry> {
+        var descriptor = FetchDescriptor<MealEntry>(sortBy: [SortDescriptor(\.date, order: .reverse)])
+        descriptor.fetchLimit = 300
+        return descriptor
+    }
+
+    struct Recent: Hashable {
+        let text: String
+        let status: FoodStatus
+    }
 
     struct Item: Identifiable {
         let id = UUID()
@@ -58,14 +70,14 @@ struct AddMealSheet: View {
                 } header: {
                     Text("What did you eat?")
                 } footer: {
-                    Text("Add as many items as you like. Tap a dot to change its status.")
+                    Text("Tap a dot to change its status.")
                 }
 
                 if !recents.isEmpty {
                     Section("Recent") {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
-                                ForEach(recents, id: \.text) { recent in
+                                ForEach(recents, id: \.self) { recent in
                                     Button {
                                         items.append(Item(text: recent.text, status: recent.status))
                                     } label: {
@@ -87,8 +99,6 @@ struct AddMealSheet: View {
 
                 Section {
                     DatePicker("Time", selection: $when)
-                } footer: {
-                    Text("The fasting timer follows your most recent meal in the log.")
                 }
             }
             .navigationTitle(title)
@@ -111,22 +121,22 @@ struct AddMealSheet: View {
     }
 
     /// Foods you log most, with the status you gave them last time. One tap adds them.
-    private var recents: [(text: String, status: FoodStatus)] {
-        var seen: [String: (count: Int, text: String, status: FoodStatus)] = [:]
-        for meal in pastMeals.prefix(300) {
+    private var recents: [Recent] {
+        let added = Set(items.map { $0.text.lowercased() })
+        var counts: [String: (count: Int, recent: Recent)] = [:]
+        for meal in pastMeals {
             let key = meal.text.lowercased()
-            guard key != "meal", !items.contains(where: { $0.text.lowercased() == key }) else { continue }
-            if var entry = seen[key] {
-                entry.count += 1
-                seen[key] = entry
+            guard key != "meal", !added.contains(key) else { continue }
+            if let entry = counts[key] {
+                counts[key] = (entry.count + 1, entry.recent)
             } else {
-                seen[key] = (1, meal.text, meal.status)
+                counts[key] = (1, Recent(text: meal.text, status: meal.status))
             }
         }
-        return seen.values
-            .sorted { $0.count > $1.count }
+        return counts.values
+            .sorted { $0.count != $1.count ? $0.count > $1.count : $0.recent.text < $1.recent.text }
             .prefix(12)
-            .map { ($0.text, $0.status) }
+            .map(\.recent)
     }
 
     private var trimmedDraft: String {

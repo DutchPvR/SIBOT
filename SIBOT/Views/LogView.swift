@@ -52,7 +52,7 @@ struct LogView: View {
                         addSeed = addDate
                         showingAdd = true
                     } label: {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: "plus")
                     }
                 }
             }
@@ -121,18 +121,30 @@ struct LogView: View {
     private var content: some View {
         switch mode {
         case .day:
+            let day = calendar.startOfDay(for: selected)
             DayLogView(
                 day: selected,
-                meals: entries.filter { calendar.isDate($0.date, inSameDayAs: selected) },
-                supplementLogs: supplementLogs.filter { calendar.isDate($0.date, inSameDayAs: selected) },
-                check: dailyChecks.first { calendar.isDate($0.day, inSameDayAs: selected) },
+                meals: entries.filter { calendar.isDate($0.date, inSameDayAs: day) },
+                supplementLogs: supplementLogs.filter { calendar.isDate($0.date, inSameDayAs: day) },
+                check: dailyChecks.first { calendar.isDate($0.day, inSameDayAs: day) },
                 onAddAt: openAdd
             )
         case .week:
-            WeekLogView(anchor: selected, entries: entries, checks: dailyChecks, onSelectDay: openDay, onAddToDay: addOnDay)
+            WeekLogView(anchor: selected, mealsByDay: mealsByDay, checksByDay: checksByDay,
+                        onSelectDay: openDay, onAddToDay: addOnDay)
         case .month:
-            MonthLogView(anchor: selected, entries: entries, checks: dailyChecks, onSelectDay: openDay, onAddToDay: addOnDay)
+            MonthLogView(anchor: selected, mealsByDay: mealsByDay, checksByDay: checksByDay,
+                         onSelectDay: openDay, onAddToDay: addOnDay)
         }
+    }
+
+    /// Meals grouped by day once, so the week and month views do not scan every meal per cell.
+    private var mealsByDay: [Date: [MealEntry]] {
+        Dictionary(grouping: entries) { calendar.startOfDay(for: $0.date) }
+    }
+
+    private var checksByDay: [Date: DailyCheck] {
+        Dictionary(dailyChecks.map { (calendar.startOfDay(for: $0.day), $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     /// Long press on a day: add an entry for it (now if it is today, otherwise midday).
