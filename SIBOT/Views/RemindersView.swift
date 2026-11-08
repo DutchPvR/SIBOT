@@ -171,7 +171,13 @@ struct SupplementEditSheet: View {
     let supplement: Supplement?
 
     @State private var name: String
-    @State private var times: [Date]
+    /// Each dose time gets its own id so removing one never confuses the list.
+    struct DoseTime: Identifiable {
+        let id = UUID()
+        var date: Date
+    }
+
+    @State private var times: [DoseTime]
     @State private var weekdays: Set<Int>
     @State private var enabled: Bool
     @State private var dose: String
@@ -187,7 +193,7 @@ struct SupplementEditSheet: View {
         let allMinutes = supplement?.allMinutes ?? [22 * 60]
         _name = State(initialValue: supplement?.name ?? "")
         _times = State(initialValue: allMinutes.map {
-            Calendar.current.date(bySettingHour: $0 / 60, minute: $0 % 60, second: 0, of: Date()) ?? Date()
+            DoseTime(date: Calendar.current.date(bySettingHour: $0 / 60, minute: $0 % 60, second: 0, of: Date()) ?? Date())
         })
         _weekdays = State(initialValue: Set(supplement?.weekdays ?? Array(1...7)))
         _enabled = State(initialValue: supplement?.enabled ?? true)
@@ -215,13 +221,13 @@ struct SupplementEditSheet: View {
                 }
 
                 Section {
-                    ForEach(times.indices, id: \.self) { index in
+                    ForEach($times) { $time in
                         HStack {
-                            DatePicker(times.count > 1 ? "Dose \(index + 1)" : "Time",
-                                       selection: $times[index], displayedComponents: .hourAndMinute)
+                            DatePicker(times.count > 1 ? "Dose" : "Time",
+                                       selection: $time.date, displayedComponents: .hourAndMinute)
                             if times.count > 1 {
                                 Button {
-                                    times.remove(at: index)
+                                    times.removeAll { $0.id == time.id }
                                 } label: {
                                     Image(systemName: "minus.circle")
                                 }
@@ -231,8 +237,8 @@ struct SupplementEditSheet: View {
                         }
                     }
                     Button("Add another time") {
-                        let last = times.last ?? Date()
-                        times.append(Calendar.current.date(byAdding: .hour, value: 4, to: last) ?? last)
+                        let last = times.last?.date ?? Date()
+                        times.append(DoseTime(date: Calendar.current.date(byAdding: .hour, value: 4, to: last) ?? last))
                     }
                 } header: {
                     Text("Times")
@@ -303,7 +309,7 @@ struct SupplementEditSheet: View {
     }
 
     private func save() {
-        let allMinutes = Array(Set(times.map { date -> Int in
+        let allMinutes = Array(Set(times.map(\.date).map { date -> Int in
             let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
             return (parts.hour ?? 22) * 60 + (parts.minute ?? 0)
         })).sorted()
