@@ -62,7 +62,7 @@ struct TimerView: View {
                     .padding(.top, 8)
 
                 HStack {
-                    Text("Last ate \(startDate.formatted(date: .omitted, time: .shortened))")
+                    Text("Last ate at \(lastAteText(startDate))")
                     Spacer()
                     Text(goalReached ? "Past \(hoursText)h goal" : "Goal \(hoursText)h")
                         .fontWeight(.semibold)
@@ -102,6 +102,14 @@ struct TimerView: View {
         let goal = MealTimerStore.gapHours * 3600
         guard goal > 0 else { return 1 }
         return min(max(now.timeIntervalSince(startDate) / goal, 0), 1)
+    }
+
+    /// Time of the latest meal in the log; adds the weekday when it was not today.
+    private func lastAteText(_ date: Date) -> String {
+        if Calendar.current.isDateInToday(date) {
+            return date.formatted(date: .omitted, time: .shortened)
+        }
+        return date.formatted(.dateTime.weekday(.abbreviated).hour().minute())
     }
 
     private var hoursText: String {
