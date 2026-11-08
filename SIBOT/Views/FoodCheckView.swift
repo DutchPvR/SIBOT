@@ -58,6 +58,18 @@ private struct FoodCheckContent: View {
             aiError = nil
             loggedMessage = nil
         }
+        // Not on your list? Ask the AI once you pause typing.
+        // Restarts (cancelling the old wait) on every keystroke, so only the final text is sent.
+        // Answers are cached on the phone, so the same food never costs twice.
+        .task(id: trimmed) {
+            guard trimmed.count >= 3, FoodDatabase.shared.search(trimmed).isEmpty else { return }
+            do {
+                try await Task.sleep(for: .seconds(1))
+            } catch {
+                return
+            }
+            await ask()
+        }
     }
 
     // MARK: - Cheat sheet
