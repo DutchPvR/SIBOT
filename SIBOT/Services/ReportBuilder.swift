@@ -134,7 +134,7 @@ enum ReportBuilder {
                     let stats = supplement.adherence(logs: input.supplementLogs, days: input.days)
                     let dose = supplement.dose.isEmpty ? "" : " \(supplement.dose)"
                     var line = "\(supplement.name)\(dose), \(supplement.timeText), \(supplement.daysText)"
-                    if stats.expected > 0 { line += " — taken \(stats.taken) of \(stats.expected) days" }
+                    if stats.expected > 0 { line += " — taken \(stats.taken) of \(stats.expected) doses" }
                     page.write(line, font: body, after: 1)
                     if let course = supplement.courseText { page.write(course, font: body, color: grey, indent: 12, after: 1) }
                     if !supplement.notes.isEmpty { page.write(supplement.notes, font: body, color: grey, indent: 12, after: 1) }

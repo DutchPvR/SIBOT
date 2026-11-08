@@ -45,7 +45,7 @@ struct RemindersView: View {
                                     VStack(alignment: .leading) {
                                         Text(log.supplementName)
                                             .font(.system(.body).weight(.semibold))
-                                        Text(log.day.formatted(date: .abbreviated, time: .omitted))
+                                        Text("\(log.day.formatted(date: .abbreviated, time: .omitted)) · \(Supplement.timeText(log.slot))")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }
@@ -79,18 +79,13 @@ struct RemindersView: View {
         }
     }
 
-    private func todaysLog(for supplement: Supplement) -> SupplementLog? {
-        logs.first { $0.supplementID == supplement.id && Calendar.current.isDateInToday($0.day) }
-    }
-
     private func supplementRow(_ supplement: Supplement) -> some View {
-        let log = todaysLog(for: supplement)
-        return VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(supplement.name)
                         .font(.system(.headline))
-                    Text(([supplement.dose.isEmpty ? nil : supplement.dose, supplement.timeText, supplement.daysText] as [String?])
+                    Text(([supplement.dose.isEmpty ? nil : supplement.dose, supplement.daysText] as [String?])
                         .compactMap { $0 }.joined(separator: " · "))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -101,7 +96,7 @@ struct RemindersView: View {
                     }
                     let stats = supplement.adherence(logs: logs)
                     if stats.expected > 0 {
-                        Text("Taken \(stats.taken) of the last \(stats.expected) days")
+                        Text("Taken \(stats.taken) of the last \(stats.expected) doses")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -122,22 +117,30 @@ struct RemindersView: View {
                 .tint(Theme.purple)
             }
 
-            HStack(spacing: 10) {
-                answerButton(title: "Taken", selected: log?.taken == true) {
-                    SupplementLogger.record(
-                        supplementID: supplement.id, name: supplement.name, taken: true, in: modelContext)
-                }
-                answerButton(title: "Skipped", selected: log?.taken == false) {
-                    SupplementLogger.record(
-                        supplementID: supplement.id, name: supplement.name, taken: false, in: modelContext)
-                }
-                if log != nil {
-                    Button("Clear") {
-                        SupplementLogger.clearToday(supplementID: supplement.id, in: modelContext)
+            // One line per dose time, each answered on its own.
+            ForEach(supplement.allMinutes, id: \.self) { slot in
+                let log = supplement.log(on: Date(), slot: slot, in: logs)
+                HStack(spacing: 10) {
+                    Text(Supplement.timeText(slot))
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 72, alignment: .leading)
+                    answerButton(title: "Taken", selected: log?.taken == true) {
+                        SupplementLogger.record(supplementID: supplement.id, name: supplement.name,
+                                                slot: slot, taken: true, in: modelContext)
                     }
-                    .font(.caption)
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
+                    answerButton(title: "Skipped", selected: log?.taken == false) {
+                        SupplementLogger.record(supplementID: supplement.id, name: supplement.name,
+                                                slot: slot, taken: false, in: modelContext)
+                    }
+                    if log != nil {
+                        Button("Clear") {
+                            SupplementLogger.clearToday(supplementID: supplement.id, slot: slot, in: modelContext)
+                        }
+                        .font(.caption)
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
@@ -168,7 +171,7 @@ struct SupplementEditSheet: View {
     let supplement: Supplement?
 
     @State private var name: String
-    @State private var time: Date
+    @State private var times: [Date]
     @State private var weekdays: Set<Int>
     @State private var enabled: Bool
     @State private var dose: String
@@ -181,10 +184,11 @@ struct SupplementEditSheet: View {
 
     init(supplement: Supplement?) {
         self.supplement = supplement
-        let minutes = supplement?.minutes ?? 22 * 60
+        let allMinutes = supplement?.allMinutes ?? [22 * 60]
         _name = State(initialValue: supplement?.name ?? "")
-        _time = State(initialValue: Calendar.current.date(
-            bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()) ?? Date())
+        _times = State(initialValue: allMinutes.map {
+            Calendar.current.date(bySettingHour: $0 / 60, minute: $0 % 60, second: 0, of: Date()) ?? Date()
+        })
         _weekdays = State(initialValue: Set(supplement?.weekdays ?? Array(1...7)))
         _enabled = State(initialValue: supplement?.enabled ?? true)
         _dose = State(initialValue: supplement?.dose ?? "")
@@ -203,12 +207,37 @@ struct SupplementEditSheet: View {
                         .focused($nameFocused)
                         .submitLabel(.done)
                         .onSubmit { nameFocused = false }
-                    DatePicker("Time", selection: $time, displayedComponents: .hourAndMinute)
                     TextField("Dose, e.g. 500 mg", text: $dose)
                         .focused($nameFocused)
                     TextField("Notes, e.g. with food", text: $notes, axis: .vertical)
                         .lineLimit(1...3)
                         .focused($nameFocused)
+                }
+
+                Section {
+                    ForEach(times.indices, id: \.self) { index in
+                        HStack {
+                            DatePicker(times.count > 1 ? "Dose \(index + 1)" : "Time",
+                                       selection: $times[index], displayedComponents: .hourAndMinute)
+                            if times.count > 1 {
+                                Button {
+                                    times.remove(at: index)
+                                } label: {
+                                    Image(systemName: "minus.circle")
+                                }
+                                .buttonStyle(.borderless)
+                                .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    Button("Add another time") {
+                        let last = times.last ?? Date()
+                        times.append(Calendar.current.date(byAdding: .hour, value: 4, to: last) ?? last)
+                    }
+                } header: {
+                    Text("Times")
+                } footer: {
+                    Text("Add a time for each dose, e.g. an antibiotic 3 times a day.")
                 }
 
                 Section {
@@ -274,8 +303,12 @@ struct SupplementEditSheet: View {
     }
 
     private func save() {
-        let parts = Calendar.current.dateComponents([.hour, .minute], from: time)
-        let minutes = (parts.hour ?? 22) * 60 + (parts.minute ?? 0)
+        let allMinutes = Array(Set(times.map { date -> Int in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            return (parts.hour ?? 22) * 60 + (parts.minute ?? 0)
+        })).sorted()
+        let minutes = allMinutes.first ?? 22 * 60
+        let extra = Array(allMinutes.dropFirst())
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let sortedDays = weekdays.sorted()
 
@@ -283,6 +316,7 @@ struct SupplementEditSheet: View {
         if let supplement {
             supplement.name = trimmed
             supplement.minutes = minutes
+            supplement.extraMinutes = extra
             supplement.weekdays = sortedDays
             supplement.enabled = enabled
             supplement.dose = dose.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -292,6 +326,7 @@ struct SupplementEditSheet: View {
             target = supplement
         } else {
             target = Supplement(name: trimmed, minutes: minutes, weekdays: sortedDays, enabled: enabled)
+            target.extraMinutes = extra
             target.dose = dose.trimmingCharacters(in: .whitespacesAndNewlines)
             target.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
             target.startDate = hasStart ? start : nil

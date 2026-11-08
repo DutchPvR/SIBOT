@@ -12,6 +12,8 @@ final class Supplement {
     var weekdays: [Int]
     var enabled: Bool
     var createdAt: Date
+    /// More dose times on the same day, besides `minutes`.
+    var extraMinutes: [Int] = []
     /// e.g. "500 mg" or "2 capsules".
     var dose: String = ""
     var notes: String = ""
@@ -28,11 +30,25 @@ final class Supplement {
         self.createdAt = Date()
     }
 
-    var timeText: String {
+    /// Every dose time in the day, in minutes after midnight, earliest first.
+    var allMinutes: [Int] {
+        Array(Set([minutes] + extraMinutes)).sorted()
+    }
+
+    static func timeText(_ minutes: Int) -> String {
         let date = Calendar.current.date(
             bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()
         ) ?? Date()
         return date.formatted(date: .omitted, time: .shortened)
+    }
+
+    var timeText: String {
+        allMinutes.map(Supplement.timeText).joined(separator: ", ")
+    }
+
+    /// The answer for one dose on one day.
+    func log(on day: Date, slot: Int, in logs: [SupplementLog]) -> SupplementLog? {
+        logs.first { $0.supplementID == id && $0.slot == slot && Calendar.current.isDate($0.day, inSameDayAs: day) }
     }
 
     var hasCourse: Bool { startDate != nil || endDate != nil }
@@ -70,16 +86,19 @@ final class Supplement {
     /// Doses taken versus expected over the last `days` days (including today).
     func adherence(logs: [SupplementLog], days: Int = 14) -> (taken: Int, expected: Int) {
         let cal = Calendar.current
+        let mine = logs.filter { $0.supplementID == id && $0.taken }
         var taken = 0
         var expected = 0
         for offset in 0..<days {
             guard let day = cal.date(byAdding: .day, value: -offset, to: Date()), isExpected(on: day) else { continue }
-            // Today does not count as missed until it is over.
-            let log = logs.first { $0.supplementID == id && cal.isDate($0.day, inSameDayAs: day) }
-            if log?.taken == true {
-                taken += 1; expected += 1
-            } else if offset > 0 {
-                expected += 1
+            for slot in allMinutes {
+                let done = mine.contains { $0.slot == slot && cal.isDate($0.day, inSameDayAs: day) }
+                if done {
+                    taken += 1; expected += 1
+                } else if offset > 0 {
+                    // Today does not count as missed until it is over.
+                    expected += 1
+                }
             }
         }
         return (taken, expected)
@@ -104,8 +123,11 @@ final class SupplementLog {
     /// The day the dose belongs to (start of day).
     var day: Date
     var taken: Bool
+    /// Which dose this answers: its time in minutes after midnight. -1 on answers from before multiple times existed.
+    var slot: Int = -1
 
-    init(supplementID: UUID, supplementName: String, taken: Bool, date: Date = Date()) {
+    init(supplementID: UUID, supplementName: String, taken: Bool, slot: Int, date: Date = Date()) {
+        self.slot = slot
         self.supplementID = supplementID
         self.supplementName = supplementName
         self.taken = taken

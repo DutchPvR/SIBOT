@@ -28,9 +28,11 @@ struct BackupFile: Codable {
     struct Supp: Codable {
         var id: UUID; var name: String; var minutes: Int; var weekdays: [Int]; var enabled: Bool
         var createdAt: Date; var dose: String; var notes: String; var startDate: Date?; var endDate: Date?
+        var extraMinutes: [Int]?
     }
     struct SuppLog: Codable {
         var supplementID: UUID; var supplementName: String; var date: Date; var day: Date; var taken: Bool
+        var slot: Int?
     }
 
     struct Bowel: Codable { var date: Date; var type: Int }
@@ -64,10 +66,11 @@ enum BackupService {
         }
         file.supplements = try context.fetch(FetchDescriptor<Supplement>()).map {
             .init(id: $0.id, name: $0.name, minutes: $0.minutes, weekdays: $0.weekdays, enabled: $0.enabled,
-                  createdAt: $0.createdAt, dose: $0.dose, notes: $0.notes, startDate: $0.startDate, endDate: $0.endDate)
+                  createdAt: $0.createdAt, dose: $0.dose, notes: $0.notes, startDate: $0.startDate, endDate: $0.endDate,
+                  extraMinutes: $0.extraMinutes)
         }
         file.supplementLogs = try context.fetch(FetchDescriptor<SupplementLog>()).map {
-            .init(supplementID: $0.supplementID, supplementName: $0.supplementName, date: $0.date, day: $0.day, taken: $0.taken)
+            .init(supplementID: $0.supplementID, supplementName: $0.supplementName, date: $0.date, day: $0.day, taken: $0.taken, slot: $0.slot)
         }
         file.personalFoods = PersonalFoods.all
         file.bowelMovements = try context.fetch(FetchDescriptor<BowelMovement>()).map { .init(date: $0.date, type: $0.type) }
@@ -123,11 +126,13 @@ enum BackupService {
             supplement.notes = s.notes
             supplement.startDate = s.startDate
             supplement.endDate = s.endDate
+            supplement.extraMinutes = s.extraMinutes ?? []
             context.insert(supplement)
             restored.append(supplement)
         }
         for l in file.supplementLogs {
-            let log = SupplementLog(supplementID: l.supplementID, supplementName: l.supplementName, taken: l.taken, date: l.date)
+            let log = SupplementLog(supplementID: l.supplementID, supplementName: l.supplementName,
+                                    taken: l.taken, slot: l.slot ?? -1, date: l.date)
             log.day = l.day
             context.insert(log)
         }

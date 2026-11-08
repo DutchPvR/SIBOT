@@ -28,10 +28,12 @@ final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
         }
 
         let name = info["supplementName"] as? String
+        let slot = info["slot"] as? Int
         await MainActor.run {
             SupplementLogger.record(
                 supplementID: id,
                 name: name,
+                slot: slot,
                 taken: taken,
                 in: Persistence.container.mainContext
             )
@@ -62,11 +64,7 @@ enum NotificationManager {
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
-    private static func identifier(for supplementID: UUID, weekday: Int) -> String {
-        "supp-\(supplementID.uuidString)-\(weekday)"
-    }
-
-    private static func content(for supplement: Supplement) -> UNMutableNotificationContent {
+    private static func content(for supplement: Supplement, slot: Int) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         content.title = supplement.name
         let dose = supplement.dose.trimmingCharacters(in: .whitespaces)
@@ -77,7 +75,8 @@ enum NotificationManager {
         content.categoryIdentifier = categoryID
         content.userInfo = [
             "supplementID": supplement.id.uuidString,
-            "supplementName": supplement.name
+            "supplementName": supplement.name,
+            "slot": slot
         ]
         return content
     }
@@ -92,33 +91,39 @@ enum NotificationManager {
         var requests: [UNNotificationRequest] = []
         if supplement.enabled && remindersOn {
             let cal = Calendar.current
-            if supplement.hasCourse {
-                // Up to 60 upcoming days, only on chosen weekdays inside the course.
-                for offset in 0..<60 {
-                    guard let day = cal.date(byAdding: .day, value: offset, to: Date()),
-                          supplement.isExpected(on: day) else { continue }
-                    var parts = cal.dateComponents([.year, .month, .day], from: day)
-                    parts.hour = supplement.minutes / 60
-                    parts.minute = supplement.minutes % 60
-                    guard let fire = cal.date(from: parts), fire > Date() else { continue }
-                    requests.append(UNNotificationRequest(
-                        identifier: "\(prefix)-d\(parts.year ?? 0)\(parts.month ?? 0)\(parts.day ?? 0)",
-                        content: content(for: supplement),
-                        trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
-                }
-            } else {
-                for weekday in supplement.weekdays where (1...7).contains(weekday) {
-                    var components = DateComponents()
-                    components.weekday = weekday
-                    components.hour = supplement.minutes / 60
-                    components.minute = supplement.minutes % 60
-                    requests.append(UNNotificationRequest(
-                        identifier: identifier(for: supplement.id, weekday: weekday),
-                        content: content(for: supplement),
-                        trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: true)))
+            for slot in supplement.allMinutes {
+                let body = content(for: supplement, slot: slot)
+                if supplement.hasCourse {
+                    // The next 10 days (refreshed every time the app opens), only on chosen weekdays inside the course.
+                    // Kept short because iOS allows an app only 64 pending notifications.
+                    for offset in 0..<10 {
+                        guard let day = cal.date(byAdding: .day, value: offset, to: Date()),
+                              supplement.isExpected(on: day) else { continue }
+                        var parts = cal.dateComponents([.year, .month, .day], from: day)
+                        parts.hour = slot / 60
+                        parts.minute = slot % 60
+                        guard let fire = cal.date(from: parts), fire > Date() else { continue }
+                        requests.append(UNNotificationRequest(
+                            identifier: "\(prefix)-d\(parts.year ?? 0)-\(parts.month ?? 0)-\(parts.day ?? 0)-\(slot)",
+                            content: body,
+                            trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
+                    }
+                } else {
+                    for weekday in supplement.weekdays where (1...7).contains(weekday) {
+                        var components = DateComponents()
+                        components.weekday = weekday
+                        components.hour = slot / 60
+                        components.minute = slot % 60
+                        requests.append(UNNotificationRequest(
+                            identifier: "\(prefix)-w\(weekday)-\(slot)",
+                            content: body,
+                            trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: true)))
+                    }
                 }
             }
         }
+        // iOS keeps at most 64 pending notifications per app; keep the soonest.
+        if requests.count > 60 { requests = Array(requests.prefix(60)) }
 
         let newRequests = requests
         center.getPendingNotificationRequests { pending in

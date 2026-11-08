@@ -41,6 +41,7 @@ struct SIBOTApp: App {
         }
 
         BowelMovement.migrateFromDailyChecks(context)
+        SupplementLogger.migrateLegacySlots(context)
 
         let supplements = (try? context.fetch(FetchDescriptor<Supplement>())) ?? []
         NotificationManager.rescheduleAll(supplements)
