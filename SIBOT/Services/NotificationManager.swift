@@ -51,7 +51,7 @@ enum NotificationManager {
 
     /// Registers the Taken / Skipped buttons shown on supplement notifications.
     static func registerCategories() {
-        let taken = UNNotificationAction(identifier: takenAction, title: "Taken ✓", options: [])
+        let taken = UNNotificationAction(identifier: takenAction, title: "Taken", options: [])
         let skipped = UNNotificationAction(identifier: skippedAction, title: "Skipped", options: [])
         let category = UNNotificationCategory(
             identifier: categoryID,
