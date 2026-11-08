@@ -7,7 +7,13 @@ struct FoodItem: Codable, Identifiable, Hashable {
     let note: String
 
     var id: String { name }
-    var foodStatus: FoodStatus { FoodStatus(rawValue: status) ?? .unknown }
+    /// Your own setting wins over the bundled list.
+    var foodStatus: FoodStatus {
+        PersonalFoods.status(for: name) ?? FoodStatus(rawValue: status) ?? .unknown
+    }
+
+    var isPersonal: Bool { note == FoodItem.personalNote }
+    static let personalNote = "Added by you."
 }
 
 private struct FoodFile: Codable {
@@ -51,6 +57,11 @@ final class FoodDatabase {
             }
             if best > 0 { scored.append((item, best)) }
         }
+        // Foods you added yourself that the bundled list does not have.
+        let bundled = Set(foods.map { $0.name.lowercased() })
+        for (name, raw) in PersonalFoods.all where !bundled.contains(name) && name.contains(q) {
+            scored.append((FoodItem(name: name.capitalized, aliases: [], status: raw, note: FoodItem.personalNote), name == q ? 100 : 60))
+        }
         return scored.sorted { $0.1 > $1.1 }.map { $0.0 }
     }
 
@@ -66,6 +77,9 @@ final class FoodDatabase {
             if names.contains(where: { text.lowercased().contains($0) || words.contains($0) }) {
                 found.append(item.foodStatus)
             }
+        }
+        for (name, raw) in PersonalFoods.all where text.lowercased().contains(name) {
+            if let status = FoodStatus(rawValue: raw) { found.append(status) }
         }
         if found.contains(.avoid) { return .avoid }
         if found.contains(.limit) { return .limit }

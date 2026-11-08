@@ -8,6 +8,10 @@ struct ReportsView: View {
     @Query private var checks: [DailyCheck]
     @Query private var supplements: [Supplement]
     @Query private var supplementLogs: [SupplementLog]
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \FoodTrial.startDate, order: .reverse) private var trials: [FoodTrial]
+    @State private var showingNewTrial = false
+    @State private var newTrialFood = ""
 
     @State private var days = 14
     @State private var files: (pdf: URL, csv: URL)?
@@ -51,6 +55,35 @@ struct ReportsView: View {
                 }
 
                 Section {
+                    ForEach(trials) { trial in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(trial.food).font(.headline)
+                                Text("Started \(trial.startDate.formatted(.dateTime.month(.abbreviated).day()))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Menu {
+                                Button("Tolerated it") { setResult(trial, 1) }
+                                Button("Reacted") { setResult(trial, 2) }
+                                Button("Still testing") { setResult(trial, 0) }
+                                Button("Delete", role: .destructive) { modelContext.delete(trial) }
+                            } label: {
+                                Text(trial.resultRaw == 1 ? "TOLERATED" : trial.resultRaw == 2 ? "REACTED" : "TESTING")
+                                    .font(.caption.weight(.heavy))
+                                    .foregroundStyle(trial.resultRaw == 1 ? Theme.green : trial.resultRaw == 2 ? Theme.red : Theme.purple)
+                            }
+                        }
+                    }
+                    Button("Test a new food") { showingNewTrial = true }
+                } header: {
+                    Text("Food trials")
+                } footer: {
+                    Text("Test one food at a time and note how you react. Marking the result sets that food to Safe or Avoid just for you.")
+                }
+
+                Section {
                     row("Bloated days", "\(insight.bloatedDays)")
                     row("No-bloat days", "\(insight.clearDays)")
                 } header: {
@@ -89,7 +122,25 @@ struct ReportsView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .alert("Test a food", isPresented: $showingNewTrial) {
+                TextField("Food, e.g. avocado", text: $newTrialFood)
+                Button("Start") {
+                    let name = newTrialFood.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !name.isEmpty { modelContext.insert(FoodTrial(food: name)) }
+                    newTrialFood = ""
+                }
+                Button("Cancel", role: .cancel) { newTrialFood = "" }
+            }
             .task(id: days) { files = ReportBuilder.writeFiles(input) }
+        }
+    }
+
+    private func setResult(_ trial: FoodTrial, _ result: Int) {
+        trial.resultRaw = result
+        switch result {
+        case 1: PersonalFoods.set(trial.food, to: .safe)
+        case 2: PersonalFoods.set(trial.food, to: .avoid)
+        default: break
         }
     }
 

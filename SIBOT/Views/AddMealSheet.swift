@@ -6,6 +6,7 @@ import SwiftUI
 struct AddMealSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \MealEntry.date, order: .reverse) private var pastMeals: [MealEntry]
 
     struct Item: Identifiable {
         let id = UUID()
@@ -60,6 +61,30 @@ struct AddMealSheet: View {
                     Text("Add as many items as you like. Tap a dot to change its status.")
                 }
 
+                if !recents.isEmpty {
+                    Section("Recent") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(recents, id: \.text) { recent in
+                                    Button {
+                                        items.append(Item(text: recent.text, status: recent.status))
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            StatusDot(status: recent.status, size: 8)
+                                            Text(recent.text).font(.footnote.weight(.medium))
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .overlay(Capsule().stroke(Theme.hairline))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    }
+                }
+
                 Section {
                     DatePicker("Time", selection: $when)
                 } footer: {
@@ -83,6 +108,25 @@ struct AddMealSheet: View {
             }
             .onAppear { draftFocused = true }
         }
+    }
+
+    /// Foods you log most, with the status you gave them last time. One tap adds them.
+    private var recents: [(text: String, status: FoodStatus)] {
+        var seen: [String: (count: Int, text: String, status: FoodStatus)] = [:]
+        for meal in pastMeals.prefix(300) {
+            let key = meal.text.lowercased()
+            guard key != "meal", !items.contains(where: { $0.text.lowercased() == key }) else { continue }
+            if var entry = seen[key] {
+                entry.count += 1
+                seen[key] = entry
+            } else {
+                seen[key] = (1, meal.text, meal.status)
+            }
+        }
+        return seen.values
+            .sorted { $0.count > $1.count }
+            .prefix(12)
+            .map { ($0.text, $0.status) }
     }
 
     private var trimmedDraft: String {

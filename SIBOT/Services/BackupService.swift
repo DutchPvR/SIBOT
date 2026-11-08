@@ -33,7 +33,11 @@ struct BackupFile: Codable {
         var supplementID: UUID; var supplementName: String; var date: Date; var day: Date; var taken: Bool
     }
 
+    struct Trial: Codable { var food: String; var startDate: Date; var result: Int; var notes: String }
+
     var version = 1
+    var personalFoods: [String: String]?
+    var trials: [Trial]?
     var exportedAt = Date()
     var gapHours: Double = 5
     var meals: [Meal] = []
@@ -63,6 +67,10 @@ enum BackupService {
         file.supplementLogs = try context.fetch(FetchDescriptor<SupplementLog>()).map {
             .init(supplementID: $0.supplementID, supplementName: $0.supplementName, date: $0.date, day: $0.day, taken: $0.taken)
         }
+        file.personalFoods = PersonalFoods.all
+        file.trials = try context.fetch(FetchDescriptor<FoodTrial>()).map {
+            .init(food: $0.food, startDate: $0.startDate, result: $0.resultRaw, notes: $0.notes)
+        }
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -88,6 +96,7 @@ enum BackupService {
         try context.delete(model: DailyCheck.self)
         try context.delete(model: Supplement.self)
         try context.delete(model: SupplementLog.self)
+        try context.delete(model: FoodTrial.self)
 
         for m in file.meals {
             context.insert(MealEntry(date: m.date, text: m.text,
@@ -118,6 +127,13 @@ enum BackupService {
             log.day = l.day
             context.insert(log)
         }
+        for t in file.trials ?? [] {
+            let trial = FoodTrial(food: t.food, startDate: t.startDate)
+            trial.resultRaw = t.result
+            trial.notes = t.notes
+            context.insert(trial)
+        }
+        if let personal = file.personalFoods { PersonalFoods.all = personal }
         try context.save()
         MealTimerStore.gapHours = file.gapHours
         NotificationManager.rescheduleAll(restored)
