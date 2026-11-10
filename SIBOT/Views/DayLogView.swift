@@ -29,15 +29,22 @@ struct DayLogView: View {
         }
     }
 
+    private func hour(_ date: Date) -> Int { calendar.component(.hour, from: date) }
+
     private var timeline: some View {
-        ScrollViewReader { proxy in
+        // Sort the day's entries into hours once, not once per hour row.
+        let mealsByHour = Dictionary(grouping: meals) { hour($0.date) }
+        let supplementsByHour = Dictionary(grouping: supplementLogs) { hour($0.date) }
+        let bowelByHour = Dictionary(grouping: bowelMovements) { hour($0.date) }
+        return ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
                     if let check, check.answered {
                         bloatRow(check)
                     }
                     ForEach(0..<24, id: \.self) { hour in
-                        hourRow(hour)
+                        hourRow(hour, meals: mealsByHour[hour] ?? [],
+                                supplements: supplementsByHour[hour] ?? [], bowel: bowelByHour[hour] ?? [])
                             .id(hour)
                     }
                 }
@@ -52,7 +59,7 @@ struct DayLogView: View {
     /// Start near the first meal of the day, or the current hour, or morning for other days.
     private func scroll(_ proxy: ScrollViewProxy) {
         let target: Int
-        if let first = meals.map({ calendar.component(.hour, from: $0.date) }).min() {
+        if let first = meals.map({ hour($0.date) }).min() {
             target = max(first - 1, 0)
         } else if calendar.isDateInToday(day) {
             target = max(calendar.component(.hour, from: Date()) - 1, 0)
@@ -69,12 +76,9 @@ struct DayLogView: View {
         return date.formatted(.dateTime.hour())
     }
 
-    private func hourRow(_ hour: Int) -> some View {
-        let hourMeals = meals.filter { calendar.component(.hour, from: $0.date) == hour }
-        let hourSupplements = supplementLogs.filter { calendar.component(.hour, from: $0.date) == hour }
-        let hourBowel = bowelMovements.filter { calendar.component(.hour, from: $0.date) == hour }
-
-        return HStack(alignment: .top, spacing: 10) {
+    private func hourRow(_ hour: Int, meals hourMeals: [MealEntry],
+                         supplements hourSupplements: [SupplementLog], bowel hourBowel: [BowelMovement]) -> some View {
+        HStack(alignment: .top, spacing: 10) {
             Text(hourLabel(hour))
                 .font(.system(.caption).weight(.semibold))
                 .foregroundStyle(.secondary)

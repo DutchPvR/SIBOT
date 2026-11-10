@@ -72,6 +72,7 @@ struct BloatSheet: View {
             }
             .navigationTitle(day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
             .navigationBarTitleDisplayMode(.inline)
+            .groupedPage()
             .tint(Theme.purple)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

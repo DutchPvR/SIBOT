@@ -58,6 +58,7 @@ struct MenuScanView: View {
             }
             .navigationTitle("Menu picks")
             .navigationBarTitleDisplayMode(.inline)
+            .groupedPage()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

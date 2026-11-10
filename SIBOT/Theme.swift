@@ -152,6 +152,13 @@ extension View {
     }
 }
 
+extension View {
+    /// The same page colour behind every sheet and settings-style list.
+    func groupedPage() -> some View {
+        scrollContentBackground(.hidden).background(Theme.groupedBackground)
+    }
+}
+
 /// The round purple plus used as the floating add button (Log, Reminders).
 struct FloatingPlus: View {
     var body: some View {

@@ -10,10 +10,10 @@ struct ContentView: View {
         TabView {
             FoodCheckView()
                 .tabItem { Label("Check", systemImage: "magnifyingglass") }
-            LogView()
-                .tabItem { Label("Log", systemImage: "list.bullet.rectangle") }
             TimerView()
                 .tabItem { Label("Fasting", systemImage: "timer") }
+            LogView()
+                .tabItem { Label("Log", systemImage: "list.bullet.rectangle") }
             RemindersView()
                 .tabItem { Label("Reminders", systemImage: "bell.badge") }
             SettingsView()

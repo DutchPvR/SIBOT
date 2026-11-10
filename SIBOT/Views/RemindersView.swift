@@ -274,6 +274,7 @@ struct SupplementEditSheet: View {
             }
             .navigationTitle(supplement == nil ? "New reminder" : "Edit reminder")
             .navigationBarTitleDisplayMode(.inline)
+            .groupedPage()
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {

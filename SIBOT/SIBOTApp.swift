@@ -9,13 +9,13 @@ struct SIBOTApp: App {
     init() {
         let nav = UINavigationBarAppearance()
         nav.configureWithTransparentBackground()
-        nav.largeTitleTextAttributes = [.foregroundColor: Theme.purpleUI, .font: UIFont.systemFont(ofSize: 38, weight: .heavy)]
         nav.titleTextAttributes = [.foregroundColor: Theme.purpleUI, .font: UIFont.systemFont(ofSize: 17, weight: .heavy)]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UNUserNotificationCenter.current().delegate = notificationDelegate
         NotificationManager.registerCategories()
         WatchSync.shared.activate()
+        ReportBuilder.clearExports()
         MealTimerController.didChange = { WatchSync.shared.push() }
     }
 

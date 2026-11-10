@@ -5,9 +5,8 @@ import Foundation
 enum MealTimerStore {
     static let appGroup = "group.com.dutchpvr.sibot"
 
-    private static var defaults: UserDefaults {
-        UserDefaults(suiteName: appGroup) ?? .standard
-    }
+    /// Opened once; every read and write reuses it.
+    private static let defaults = UserDefaults(suiteName: appGroup) ?? .standard
 
     /// Hours to wait between meals. Default 4, as in the Cedars-Sinai handout.
     static var gapHours: Double {

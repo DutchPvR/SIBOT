@@ -97,6 +97,16 @@ enum AIFoodChecker {
         }
     }
 
+    /// A private session: nothing about requests or answers is cached to disk, and no cookies are kept.
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.urlCache = nil
+        config.httpCookieStorage = nil
+        config.httpShouldSetCookies = false
+        config.timeoutIntervalForRequest = 60
+        return URLSession(configuration: config)
+    }()
+
     private static func request(messages: [[String: Any]], maxTokens: Int, disableReasoning: Bool) async throws -> String {
         guard let key = Keychain.load(account: keyAccount), !key.isEmpty else {
             throw AIFoodError.missingKey
@@ -118,7 +128,7 @@ enum AIFoodChecker {
             : ["effort": "low", "exclude": true]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw AIFoodError.badResponse("No response from OpenRouter.")
         }

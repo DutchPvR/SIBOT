@@ -13,12 +13,8 @@ enum LogMode: String, CaseIterable, Identifiable {
 }
 
 /// The Log tab: switch between a day timeline and a month calendar. Tap a day in the month to open it.
+/// Only the day or month on screen is read from the database, so it stays fast as the diary grows.
 struct LogView: View {
-    @Query(sort: \MealEntry.date) private var entries: [MealEntry]
-    @Query(sort: \SupplementLog.date) private var supplementLogs: [SupplementLog]
-    @Query private var dailyChecks: [DailyCheck]
-    @Query(sort: \BowelMovement.date) private var bowelMovements: [BowelMovement]
-
     @State private var mode: LogMode = .day
     @State private var selected = Date()
     @State private var showingAdd = false
@@ -122,28 +118,10 @@ struct LogView: View {
     private var content: some View {
         switch mode {
         case .day:
-            let day = calendar.startOfDay(for: selected)
-            DayLogView(
-                day: selected,
-                meals: entries.filter { calendar.isDate($0.date, inSameDayAs: day) },
-                supplementLogs: supplementLogs.filter { calendar.isDate($0.date, inSameDayAs: day) },
-                bowelMovements: bowelMovements.filter { calendar.isDate($0.date, inSameDayAs: day) },
-                check: dailyChecks.first { calendar.isDate($0.day, inSameDayAs: day) },
-                onAddAt: openAdd
-            )
+            DayLogLoader(day: selected, onAddAt: openAdd)
         case .month:
-            MonthLogView(anchor: selected, mealsByDay: mealsByDay, checksByDay: checksByDay,
-                         onSelectDay: openDay, onAddToDay: addOnDay)
+            MonthLogLoader(anchor: selected, onSelectDay: openDay, onAddToDay: addOnDay)
         }
-    }
-
-    /// Meals grouped by day once, so the month view does not scan every meal per cell.
-    private var mealsByDay: [Date: [MealEntry]] {
-        Dictionary(grouping: entries) { calendar.startOfDay(for: $0.date) }
-    }
-
-    private var checksByDay: [Date: DailyCheck] {
-        Dictionary(dailyChecks.map { (calendar.startOfDay(for: $0.day), $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     /// Long press on a day: add an entry for it (now if it is today, otherwise midday).
@@ -167,5 +145,65 @@ struct LogView: View {
     private func openDay(_ day: Date) {
         selected = day
         mode = .day
+    }
+}
+
+/// Reads one day's entries from the database.
+private struct DayLogLoader: View {
+    let day: Date
+    let onAddAt: (Date, LogEntryKind) -> Void
+
+    @Query private var meals: [MealEntry]
+    @Query private var supplementLogs: [SupplementLog]
+    @Query private var bowelMovements: [BowelMovement]
+    @Query private var checks: [DailyCheck]
+
+    init(day: Date, onAddAt: @escaping (Date, LogEntryKind) -> Void) {
+        self.day = day
+        self.onAddAt = onAddAt
+        let start = Calendar.current.startOfDay(for: day)
+        let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start
+        _meals = Query(filter: #Predicate<MealEntry> { $0.date >= start && $0.date < end }, sort: \.date)
+        _supplementLogs = Query(filter: #Predicate<SupplementLog> { $0.date >= start && $0.date < end }, sort: \.date)
+        _bowelMovements = Query(filter: #Predicate<BowelMovement> { $0.date >= start && $0.date < end }, sort: \.date)
+        _checks = Query(filter: #Predicate<DailyCheck> { $0.day >= start && $0.day < end })
+    }
+
+    var body: some View {
+        DayLogView(day: day, meals: meals, supplementLogs: supplementLogs,
+                   bowelMovements: bowelMovements, check: checks.first, onAddAt: onAddAt)
+    }
+}
+
+/// Reads one month's meals and bloat answers from the database.
+private struct MonthLogLoader: View {
+    let anchor: Date
+    let onSelectDay: (Date) -> Void
+    let onAddToDay: (Date, LogEntryKind) -> Void
+
+    @Query private var meals: [MealEntry]
+    @Query private var checks: [DailyCheck]
+
+    init(anchor: Date, onSelectDay: @escaping (Date) -> Void, onAddToDay: @escaping (Date, LogEntryKind) -> Void) {
+        self.anchor = anchor
+        self.onSelectDay = onSelectDay
+        self.onAddToDay = onAddToDay
+        let month = Calendar.current.dateInterval(of: .month, for: anchor)
+        let start = month?.start ?? anchor
+        let end = month?.end ?? anchor
+        _meals = Query(filter: #Predicate<MealEntry> { $0.date >= start && $0.date < end }, sort: \.date)
+        _checks = Query(filter: #Predicate<DailyCheck> { $0.day >= start && $0.day < end })
+    }
+
+    var body: some View {
+        let calendar = Calendar.current
+        MonthLogView(
+            anchor: anchor,
+            mealsByDay: Dictionary(grouping: meals) { calendar.startOfDay(for: $0.date) },
+            checksByDay: Dictionary(checks.map { (calendar.startOfDay(for: $0.day), $0) },
+                                    uniquingKeysWith: { first, _ in first }),
+            onSelectDay: onSelectDay,
+            onAddToDay: onAddToDay
+        )
     }
 }

@@ -5,8 +5,9 @@ import UserNotifications
 
 struct SettingsView: View {
     @State private var gapHours = MealTimerStore.gapHours
-    @State private var apiKey = Keychain.load(account: AIFoodChecker.keyAccount) ?? ""
-    @State private var keySaved = false
+    /// The saved key is never read back into the screen; you can only replace or remove it.
+    @State private var apiKey = ""
+    @State private var hasKey = Keychain.exists(account: AIFoodChecker.keyAccount)
     @AppStorage(AIFoodChecker.modelDefaultsKey) private var aiModel = AIFoodChecker.defaultModel
     @FocusState private var fieldFocused: Bool
     @Environment(\.modelContext) private var modelContext
@@ -67,7 +68,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    SecureField("OpenRouter key", text: $apiKey)
+                    SecureField(hasKey ? "Key saved" : "OpenRouter key", text: $apiKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .focused($fieldFocused)
@@ -85,13 +86,20 @@ struct SettingsView: View {
                             .submitLabel(.done)
                             .onSubmit { fieldFocused = false }
                     }
-                    Button(keySaved ? "Saved" : "Save") {
-                        Keychain.save(apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
-                                      account: AIFoodChecker.keyAccount)
-                        keySaved = true
+                    Button("Save key") {
+                        let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if Keychain.save(key, account: AIFoodChecker.keyAccount) { hasKey = true }
+                        apiKey = ""
                         fieldFocused = false
                     }
-                    .onChange(of: apiKey) { _, _ in keySaved = false }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if hasKey {
+                        Button("Remove key", role: .destructive) {
+                            Keychain.save("", account: AIFoodChecker.keyAccount)
+                            hasKey = false
+                            apiKey = ""
+                        }
+                    }
                 } header: {
                     Text("AI fallback")
                 }
@@ -228,7 +236,6 @@ private struct AboutView: View {
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
-        .scrollContentBackground(.hidden)
-        .background(Theme.groupedBackground)
+        .groupedPage()
     }
 }

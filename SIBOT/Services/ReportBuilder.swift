@@ -195,15 +195,27 @@ enum ReportBuilder {
 
     // MARK: - Files
 
+    private static var exportFolder: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("exports", isDirectory: true)
+    }
+
+    /// Removes earlier exports so copies of the diary do not pile up on the phone.
+    static func clearExports() {
+        try? FileManager.default.removeItem(at: exportFolder)
+    }
+
     /// Writes the files to a temporary folder and returns their URLs.
+    /// The files are encrypted by iOS whenever the phone is locked.
     static func writeFiles(_ input: Input) -> (pdf: URL, csv: URL)? {
         let stamp = Date().formatted(.iso8601.year().month().day())
-        let folder = FileManager.default.temporaryDirectory
+        let folder = exportFolder
+        clearExports()
         let pdfURL = folder.appendingPathComponent("SIBOT-diary-\(stamp).pdf")
         let csvURL = folder.appendingPathComponent("SIBOT-diary-\(stamp).csv")
         do {
-            try pdf(input).write(to: pdfURL, options: .atomic)
-            try csv(input).write(to: csvURL, atomically: true, encoding: .utf8)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try pdf(input).write(to: pdfURL, options: [.atomic, .completeFileProtection])
+            try Data(csv(input).utf8).write(to: csvURL, options: [.atomic, .completeFileProtection])
             return (pdfURL, csvURL)
         } catch {
             return nil

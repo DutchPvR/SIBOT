@@ -6,6 +6,10 @@ on:
     branches: [main]
   pull_request:
 
+# The workflow can read the code and nothing else.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-15

@@ -7,6 +7,10 @@ on:
   push:
     tags: ["v*"]
 
+# The workflow can read the code and nothing else.
+permissions:
+  contents: read
+
 jobs:
   testflight:
     runs-on: macos-15
