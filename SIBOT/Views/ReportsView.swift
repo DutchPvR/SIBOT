@@ -16,13 +16,14 @@ struct ReportsView: View {
 
     @State private var days = 14
     @State private var files: (pdf: URL, csv: URL)?
+    /// Worked out when the diary changes, not on every redraw.
+    @State private var insight = InsightResult.empty
 
     private var input: ReportBuilder.Input {
         ReportBuilder.Input(days: days, meals: meals, checks: checks, supplements: supplements, supplementLogs: supplementLogs, bowelMovements: bowelMovements)
     }
 
     var body: some View {
-        let insight = Insights.analyze(meals: meals, checks: checks)
         NavigationStack {
             List {
                 Section {
@@ -37,19 +38,13 @@ struct ReportsView: View {
 
                 Section {
                     if let files {
-                        ShareLink(item: files.pdf) {
-                            Label("Share PDF for your doctor", systemImage: "doc.richtext")
-                        }
-                        ShareLink(item: files.csv) {
-                            Label("Share spreadsheet (CSV)", systemImage: "tablecells")
-                        }
+                        ShareLink("PDF", item: files.pdf)
+                        ShareLink("Spreadsheet (CSV)", item: files.csv)
                     } else {
                         Text("Preparing…").foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("Export")
-                } footer: {
-                    Text("Meals with times, bloat days, symptoms, bowel movements and supplements for the period.")
                 }
 
                 Section {
@@ -77,8 +72,6 @@ struct ReportsView: View {
                     Button("Test a new food") { showingNewTrial = true }
                 } header: {
                     Text("Food trials")
-                } footer: {
-                    Text("Test one food at a time and note how you react. Marking the result sets that food to Safe or Avoid just for you.")
                 }
 
                 Section {
@@ -110,11 +103,12 @@ struct ReportsView: View {
                 } header: {
                     Text("Possible triggers")
                 } footer: {
-                    Text("Compares the day and the 2 days before each bloat answer. It shows patterns in your diary, not causes.")
+                    Text("Patterns from the 2 days before each answer, not causes.")
                 }
             }
             .navigationTitle("Reports")
             .navigationBarTitleDisplayMode(.inline)
+            .groupedPage()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -130,6 +124,9 @@ struct ReportsView: View {
                 Button("Cancel", role: .cancel) { newTrialFood = "" }
             }
             .task(id: days) { files = ReportBuilder.writeFiles(input) }
+            .task(id: [meals.count, checks.count]) {
+                insight = Insights.analyze(meals: meals, checks: checks)
+            }
         }
     }
 

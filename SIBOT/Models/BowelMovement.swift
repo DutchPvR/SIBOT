@@ -74,6 +74,7 @@ struct BowelSheet: View {
             }
             .navigationTitle(existing == nil ? "Bowel movement" : "Edit")
             .navigationBarTitleDisplayMode(.inline)
+            .groupedPage()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

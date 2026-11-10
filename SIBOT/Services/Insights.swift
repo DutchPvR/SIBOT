@@ -17,6 +17,8 @@ struct InsightResult {
 
     /// A few bloated and clear days are needed before the numbers mean anything.
     var hasEnoughData: Bool { bloatedDays >= 3 && clearDays >= 3 }
+
+    static let empty = InsightResult(bloatedDays: 0, clearDays: 0, suspects: [], riskBloated: 0, riskClear: 0)
 }
 
 /// Looks back from each journal day to the food eaten that day and the days before it,

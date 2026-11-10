@@ -50,7 +50,24 @@ struct BackupFile: Codable {
     var supplementLogs: [SuppLog] = []
 }
 
+enum BackupError: LocalizedError {
+    case tooLarge
+    case newerVersion
+
+    var errorDescription: String? {
+        switch self {
+        case .tooLarge: return "That file is too large to be a SIBOT backup."
+        case .newerVersion: return "That backup was made by a newer version of SIBOT."
+        }
+    }
+}
+
 enum BackupService {
+    /// Limits applied to a backup file before anything in the app is replaced.
+    private static let maxFileBytes = 20_000_000
+    private static func text(_ value: String, _ limit: Int = 500) -> String { String(value.prefix(limit)) }
+    private static func minutes(_ value: Int) -> Int { min(max(value, 0), 24 * 60 - 1) }
+
     static let lastBackupKey = "lastBackupDate"
 
     @MainActor
@@ -90,10 +107,14 @@ enum BackupService {
     static func restore(from url: URL, context: ModelContext) throws {
         let needsAccess = url.startAccessingSecurityScopedResource()
         defer { if needsAccess { url.stopAccessingSecurityScopedResource() } }
+        // Check the file before touching anything: size first, then that it decodes fully.
+        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard size <= maxFileBytes else { throw BackupError.tooLarge }
         let data = try Data(contentsOf: url)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let file = try decoder.decode(BackupFile.self, from: data)
+        guard file.version <= 1 else { throw BackupError.newerVersion }
 
         for old in try context.fetch(FetchDescriptor<Supplement>()) {
             NotificationManager.cancel(supplementID: old.id)
@@ -106,46 +127,51 @@ enum BackupService {
         try context.delete(model: BowelMovement.self)
 
         for m in file.meals {
-            context.insert(MealEntry(date: m.date, text: m.text,
-                                     status: FoodStatus(rawValue: m.status) ?? .unknown, symptomScore: m.symptomScore))
+            context.insert(MealEntry(date: m.date, text: text(m.text),
+                                     status: FoodStatus(rawValue: m.status) ?? .unknown,
+                                     symptomScore: m.symptomScore.map { min(max($0, 1), 5) }))
         }
         for c in file.checks {
             let check = DailyCheck(day: c.day, bloated: c.bloated, answered: c.answered)
-            check.severity = c.severity
-            check.symptomsRaw = c.symptoms
-            check.bowelCount = c.bowelCount
-            check.bowelType = c.bowelType
+            check.severity = min(max(c.severity, 0), 5)
+            check.symptomsRaw = text(c.symptoms, 200)
+            // Old backups kept bowel counts here; they become timed entries the next time the app opens.
+            check.bowelCount = min(max(c.bowelCount, 0), 20)
+            check.bowelType = min(max(c.bowelType, 0), 7)
             context.insert(check)
         }
         var restored: [Supplement] = []
         for s in file.supplements {
-            let supplement = Supplement(name: s.name, minutes: s.minutes, weekdays: s.weekdays, enabled: s.enabled)
+            let supplement = Supplement(name: text(s.name, 100), minutes: minutes(s.minutes),
+                                        weekdays: s.weekdays.filter { (1...7).contains($0) }, enabled: s.enabled)
             supplement.id = s.id
             supplement.createdAt = s.createdAt
-            supplement.dose = s.dose
-            supplement.notes = s.notes
+            supplement.dose = text(s.dose, 100)
+            supplement.notes = text(s.notes)
             supplement.startDate = s.startDate
             supplement.endDate = s.endDate
-            supplement.extraMinutes = s.extraMinutes ?? []
+            supplement.extraMinutes = (s.extraMinutes ?? []).prefix(12).map(minutes)
             context.insert(supplement)
             restored.append(supplement)
         }
         for l in file.supplementLogs {
-            let log = SupplementLog(supplementID: l.supplementID, supplementName: l.supplementName,
+            let log = SupplementLog(supplementID: l.supplementID, supplementName: text(l.supplementName, 100),
                                     taken: l.taken, slot: l.slot ?? -1, date: l.date)
             log.day = l.day
             context.insert(log)
         }
         for t in file.trials ?? [] {
-            let trial = FoodTrial(food: t.food, startDate: t.startDate)
-            trial.resultRaw = t.result
-            trial.notes = t.notes
+            let trial = FoodTrial(food: text(t.food, 100), startDate: t.startDate)
+            trial.resultRaw = min(max(t.result, 0), 2)
+            trial.notes = text(t.notes)
             context.insert(trial)
         }
-        for b in file.bowelMovements ?? [] { context.insert(BowelMovement(date: b.date, type: b.type)) }
-        if let personal = file.personalFoods { PersonalFoods.all = personal }
+        for b in file.bowelMovements ?? [] { context.insert(BowelMovement(date: b.date, type: min(max(b.type, 0), 7))) }
+        if let personal = file.personalFoods {
+            PersonalFoods.all = personal.filter { FoodStatus(rawValue: $0.value) != nil && $0.key.count <= 100 }
+        }
         try context.save()
-        MealTimerStore.gapHours = file.gapHours
+        MealTimerStore.gapHours = min(max(file.gapHours, 1), 8)
         WatchSync.shared.push()
         NotificationManager.rescheduleAll(restored)
     }

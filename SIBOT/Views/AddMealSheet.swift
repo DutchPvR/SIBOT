@@ -103,6 +103,7 @@ struct AddMealSheet: View {
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .groupedPage()
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
@@ -200,6 +201,7 @@ struct EditMealSheet: View {
             }
             .navigationTitle("Edit")
             .navigationBarTitleDisplayMode(.inline)
+            .groupedPage()
             .scrollDismissesKeyboard(.interactively)
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
