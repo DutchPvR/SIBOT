@@ -5,22 +5,18 @@ enum LogEntryKind {
     case meal, bowel, bloat
 }
 
-enum LogMode: String, CaseIterable, Identifiable {
-    case day = "Day"
-    case month = "Month"
-
-    var id: String { rawValue }
-}
-
-/// The Log tab: switch between a day timeline and a month calendar. Tap a day in the month to open it.
-/// Only the day or month on screen is read from the database, so it stays fast as the diary grows.
+/// The Log tab: one day as a timeline. Tap the date to pick another day from a calendar.
+/// Only the day on screen is read from the database, so it stays fast as the diary grows.
 struct LogView: View {
-    @State private var mode: LogMode = .day
+    /// Changes each time the Log tab is tapped: go to today and scroll to the current time.
+    var jumpToNow = 0
+
     @State private var selected = Date()
     @State private var showingAdd = false
     @State private var addSeed = Date()
     @State private var showingBowel = false
     @State private var showingBloat = false
+    @State private var showingCalendar = false
 
     private var calendar: Calendar { .current }
 
@@ -29,20 +25,15 @@ struct LogView: View {
             ZStack {
                 Theme.background
                 VStack(spacing: 10) {
-                    Picker("View", selection: $mode) {
-                        ForEach(LogMode.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
-
                     header
-                    content
+                    DayLogLoader(day: selected, scrollToken: jumpToNow, onAddAt: openAdd)
                 }
                 // Room under the last item so the floating button never covers it.
                 .contentMargins(.bottom, 80, for: .scrollContent)
             }
             .overlay(alignment: .bottomTrailing) { addButton }
             .tabHeader("Log")
+            .onChange(of: jumpToNow) { _, _ in selected = Date() }
             .sheet(isPresented: $showingAdd) {
                 AddMealSheet(initialDate: addSeed)
             }
@@ -52,7 +43,35 @@ struct LogView: View {
             .sheet(isPresented: $showingBloat) {
                 BloatSheet(day: addSeed)
             }
+            .sheet(isPresented: $showingCalendar) { calendarSheet }
         }
+    }
+
+    /// A month calendar for jumping to any day.
+    private var calendarSheet: some View {
+        NavigationStack {
+            DatePicker("Day", selection: $selected, in: ...Date(), displayedComponents: .date)
+                .datePickerStyle(.graphical)
+                .tint(Theme.purple)
+                .padding(.horizontal)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .navigationTitle("Go to day")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Today") {
+                            selected = Date()
+                            showingCalendar = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { showingCalendar = false }
+                    }
+                }
+                // Picking a day closes the calendar.
+                .onChange(of: calendar.startOfDay(for: selected)) { _, _ in showingCalendar = false }
+        }
+        .presentationDetents([.medium, .large])
     }
 
     /// Floating add button, bottom right.
@@ -74,63 +93,34 @@ struct LogView: View {
     private var header: some View {
         HStack {
             Button { step(-1) } label: { Image(systemName: "chevron.left") }
+                .accessibilityLabel("Previous day")
             Spacer()
-            Button { selected = Date() } label: {
-                Text(title)
-                    .font(.system(.headline))
-                    .foregroundStyle(.primary)
+            Button { showingCalendar = true } label: {
+                HStack(spacing: 6) {
+                    Text(selected.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Image(systemName: "chevron.down")
+                        .font(.caption.weight(.bold))
+                }
             }
             Spacer()
             Button { step(1) } label: { Image(systemName: "chevron.right") }
+                .accessibilityLabel("Next day")
+                .disabled(calendar.isDateInToday(selected))
         }
         .padding(.horizontal, 24)
         .tint(Theme.purple)
     }
 
-    private var title: String {
-        switch mode {
-        case .day:
-            return selected.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
-        case .month:
-            return selected.formatted(.dateTime.month(.wide).year())
-        }
-    }
-
     private func step(_ direction: Int) {
-        let component: Calendar.Component
-        let value: Int
-        switch mode {
-        case .day: component = .day; value = direction
-        case .month: component = .month; value = direction
-        }
-        selected = calendar.date(byAdding: component, value: value, to: selected) ?? selected
+        selected = calendar.date(byAdding: .day, value: direction, to: selected) ?? selected
     }
 
     /// New meals are stamped "now" on today, or midday when you are looking at another day.
     private var addDate: Date {
         if calendar.isDateInToday(selected) { return Date() }
         return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: selected) ?? selected
-    }
-
-    // MARK: - Content
-
-    @ViewBuilder
-    private var content: some View {
-        switch mode {
-        case .day:
-            DayLogLoader(day: selected, onAddAt: openAdd)
-        case .month:
-            MonthLogLoader(anchor: selected, onSelectDay: openDay, onAddToDay: addOnDay)
-        }
-    }
-
-    /// Long press on a day: add an entry for it (now if it is today, otherwise midday).
-    private func addOnDay(_ day: Date, _ kind: LogEntryKind) {
-        if calendar.isDateInToday(day) {
-            openAdd(Date(), kind)
-        } else {
-            openAdd(calendar.date(bySettingHour: 12, minute: 0, second: 0, of: day) ?? day, kind)
-        }
     }
 
     private func openAdd(_ date: Date, _ kind: LogEntryKind) {
@@ -141,16 +131,12 @@ struct LogView: View {
         case .bloat: showingBloat = true
         }
     }
-
-    private func openDay(_ day: Date) {
-        selected = day
-        mode = .day
-    }
 }
 
 /// Reads one day's entries from the database.
 private struct DayLogLoader: View {
     let day: Date
+    let scrollToken: Int
     let onAddAt: (Date, LogEntryKind) -> Void
 
     @Query private var meals: [MealEntry]
@@ -159,8 +145,9 @@ private struct DayLogLoader: View {
     @Query private var bloatEpisodes: [BloatEpisode]
     @Query private var checks: [DailyCheck]
 
-    init(day: Date, onAddAt: @escaping (Date, LogEntryKind) -> Void) {
+    init(day: Date, scrollToken: Int, onAddAt: @escaping (Date, LogEntryKind) -> Void) {
         self.day = day
+        self.scrollToken = scrollToken
         self.onAddAt = onAddAt
         let start = Calendar.current.startOfDay(for: day)
         let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? start
@@ -174,39 +161,6 @@ private struct DayLogLoader: View {
     var body: some View {
         DayLogView(day: day, meals: meals, supplementLogs: supplementLogs,
                    bowelMovements: bowelMovements, bloatEpisodes: bloatEpisodes,
-                   check: checks.first, onAddAt: onAddAt)
-    }
-}
-
-/// Reads one month's meals and bloat answers from the database.
-private struct MonthLogLoader: View {
-    let anchor: Date
-    let onSelectDay: (Date) -> Void
-    let onAddToDay: (Date, LogEntryKind) -> Void
-
-    @Query private var meals: [MealEntry]
-    @Query private var checks: [DailyCheck]
-
-    init(anchor: Date, onSelectDay: @escaping (Date) -> Void, onAddToDay: @escaping (Date, LogEntryKind) -> Void) {
-        self.anchor = anchor
-        self.onSelectDay = onSelectDay
-        self.onAddToDay = onAddToDay
-        let month = Calendar.current.dateInterval(of: .month, for: anchor)
-        let start = month?.start ?? anchor
-        let end = month?.end ?? anchor
-        _meals = Query(filter: #Predicate<MealEntry> { $0.date >= start && $0.date < end }, sort: \.date)
-        _checks = Query(filter: #Predicate<DailyCheck> { $0.day >= start && $0.day < end })
-    }
-
-    var body: some View {
-        let calendar = Calendar.current
-        MonthLogView(
-            anchor: anchor,
-            mealsByDay: Dictionary(grouping: meals) { calendar.startOfDay(for: $0.date) },
-            checksByDay: Dictionary(checks.map { (calendar.startOfDay(for: $0.day), $0) },
-                                    uniquingKeysWith: { first, _ in first }),
-            onSelectDay: onSelectDay,
-            onAddToDay: onAddToDay
-        )
+                   check: checks.first, scrollToken: scrollToken, onAddAt: onAddAt)
     }
 }

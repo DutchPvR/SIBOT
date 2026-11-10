@@ -116,6 +116,7 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink("Analytics") { AnalyticsView() }
                     Button("Export log") { showingReports = true }
                     Button("Back up") {
                         do {

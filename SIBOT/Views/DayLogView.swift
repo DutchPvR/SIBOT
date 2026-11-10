@@ -11,6 +11,8 @@ struct DayLogView: View {
     let bowelMovements: [BowelMovement]
     let bloatEpisodes: [BloatEpisode]
     let check: DailyCheck?
+    /// Changes when the Log tab is tapped: scroll back to the current time.
+    var scrollToken = 0
     let onAddAt: (Date, LogEntryKind) -> Void
 
     @State private var editingMeal: MealEntry?
@@ -22,7 +24,10 @@ struct DayLogView: View {
     private var calendar: Calendar { .current }
 
     var body: some View {
-        timeline
+        // Redrawn every minute so the "now" line keeps moving.
+        TimelineView(.periodic(from: .now, by: 60)) { context in
+            timeline(now: context.date)
+        }
         .sheet(item: $editingMeal) { EditMealSheet(meal: $0) }
         .sheet(isPresented: $editingBloat) { BloatSheet(day: day, startsAsNoBloat: check?.answer == false) }
         .sheet(item: $editingEpisode) { BloatSheet(day: $0.date, episode: $0) }
@@ -34,7 +39,8 @@ struct DayLogView: View {
 
     private func hour(_ date: Date) -> Int { calendar.component(.hour, from: date) }
 
-    private var timeline: some View {
+    private func timeline(now: Date) -> some View {
+        let nowHour = calendar.isDateInToday(day) ? hour(now) : nil
         // Sort the day's entries into hours once, not once per hour row.
         let mealsByHour = Dictionary(grouping: meals) { hour($0.date) }
         let supplementsByHour = Dictionary(grouping: supplementLogs) { hour($0.date) }
@@ -50,7 +56,7 @@ struct DayLogView: View {
                     ForEach(0..<24, id: \.self) { hour in
                         hourRow(hour, meals: mealsByHour[hour] ?? [],
                                 supplements: supplementsByHour[hour] ?? [], bowel: bowelByHour[hour] ?? [],
-                                bloat: bloatByHour[hour] ?? [])
+                                bloat: bloatByHour[hour] ?? [], now: hour == nowHour ? now : nil)
                             .id(hour)
                     }
                 }
@@ -59,16 +65,17 @@ struct DayLogView: View {
             }
             .onAppear { scroll(proxy) }
             .onChange(of: day) { _, _ in scroll(proxy) }
+            .onChange(of: scrollToken) { _, _ in scroll(proxy) }
         }
     }
 
-    /// Start near the first meal of the day, or the current hour, or morning for other days.
+    /// Today opens at the current time. Other days open near their first meal, or in the morning.
     private func scroll(_ proxy: ScrollViewProxy) {
         let target: Int
-        if let first = meals.map({ hour($0.date) }).min() {
+        if calendar.isDateInToday(day) {
+            target = max(hour(Date()) - 1, 0)
+        } else if let first = meals.map({ hour($0.date) }).min() {
             target = max(first - 1, 0)
-        } else if calendar.isDateInToday(day) {
-            target = max(calendar.component(.hour, from: Date()) - 1, 0)
         } else {
             target = 6
         }
@@ -84,11 +91,11 @@ struct DayLogView: View {
 
     private func hourRow(_ hour: Int, meals hourMeals: [MealEntry],
                          supplements hourSupplements: [SupplementLog], bowel hourBowel: [BowelMovement],
-                         bloat hourBloat: [BloatEpisode]) -> some View {
+                         bloat hourBloat: [BloatEpisode], now: Date?) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text(hourLabel(hour))
-                .font(.system(.caption).weight(.semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(.caption).weight(now == nil ? .semibold : .heavy))
+                .foregroundStyle(now == nil ? Color.secondary : Theme.purple)
                 .frame(width: 48, alignment: .trailing)
                 .padding(.top, 6)
 
@@ -111,6 +118,9 @@ struct DayLogView: View {
             .overlay(alignment: .top) {
                 Hairline()
             }
+            .overlay(alignment: .topLeading) {
+                if let now { nowLine(now) }
+            }
         }
         .contentShape(Rectangle())
         .contextMenu {
@@ -119,6 +129,23 @@ struct DayLogView: View {
             Button("Add bowel movement at \(hourLabel(hour))") { onAddAt(time, .bowel) }
             Button("Add bloating at \(hourLabel(hour))") { onAddAt(time, .bloat) }
         }
+    }
+
+    /// A purple line across the current hour, placed by how far into the hour it is.
+    private func nowLine(_ now: Date) -> some View {
+        let fraction = CGFloat(calendar.component(.minute, from: now)) / 60
+        return GeometryReader { geo in
+            HStack(spacing: 4) {
+                Circle().fill(Theme.purple).frame(width: 7, height: 7)
+                Rectangle().fill(Theme.purple).frame(height: 1.5)
+                Text(now.formatted(date: .omitted, time: .shortened))
+                    .font(.caption2.weight(.heavy))
+                    .foregroundStyle(Theme.purple)
+            }
+            .offset(x: -4, y: geo.size.height * fraction - 4)
+        }
+        .allowsHitTesting(false)
+        .accessibilityLabel("Now, \(now.formatted(date: .omitted, time: .shortened))")
     }
 
     private func mealPill(_ meal: MealEntry) -> some View {

@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// Summary, possible triggers and the doctor report (PDF / CSV).
+/// The doctor report (PDF / CSV) and food trials. Charts and triggers are in Analytics.
 struct ReportsView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \MealEntry.date) private var meals: [MealEntry]
@@ -17,8 +17,6 @@ struct ReportsView: View {
 
     @State private var days = 14
     @State private var files: (pdf: URL, csv: URL)?
-    /// Worked out when the diary changes, not on every redraw.
-    @State private var insight = InsightResult.empty
 
     private var input: ReportBuilder.Input {
         ReportBuilder.Input(days: days, meals: meals, checks: checks, supplements: supplements, supplementLogs: supplementLogs, bowelMovements: bowelMovements, bloatEpisodes: bloatEpisodes)
@@ -74,40 +72,8 @@ struct ReportsView: View {
                 } header: {
                     Text("Food trials")
                 }
-
-                Section {
-                    row("Bloated days", "\(insight.bloatedDays)")
-                    row("No-bloat days", "\(insight.clearDays)")
-                } header: {
-                    Text("All time")
-                }
-
-                Section {
-                    if insight.hasEnoughData {
-                        if insight.suspects.isEmpty {
-                            Text("No food stands out yet.").foregroundStyle(.secondary)
-                        }
-                        ForEach(insight.suspects) { suspect in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(suspect.food.capitalized).font(.headline)
-                                Text("Before \(suspect.bloatedWindows) of \(insight.bloatedDays) bloated days, \(suspect.clearWindows) of \(insight.clearDays) clear days")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        row("Limit/Avoid items before bloated days", String(format: "%.1f", insight.riskBloated))
-                        row("Limit/Avoid items before clear days", String(format: "%.1f", insight.riskClear))
-                    } else {
-                        Text("Log at least 3 bloated and 3 clear days to see patterns.")
-                            .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Text("Possible triggers")
-                } footer: {
-                    Text("Patterns from the 2 days before each answer, not causes.")
-                }
             }
-            .navigationTitle("Reports")
+            .navigationTitle("Export")
             .navigationBarTitleDisplayMode(.inline)
             .groupedPage()
             .toolbar {
@@ -125,9 +91,6 @@ struct ReportsView: View {
                 Button("Cancel", role: .cancel) { newTrialFood = "" }
             }
             .task(id: days) { files = ReportBuilder.writeFiles(input) }
-            .task(id: [meals.count, checks.count, bloatEpisodes.count]) {
-                insight = Insights.analyze(meals: meals, checks: checks, episodes: bloatEpisodes)
-            }
         }
     }
 
@@ -137,14 +100,6 @@ struct ReportsView: View {
         case 1: PersonalFoods.set(trial.food, to: .safe)
         case 2: PersonalFoods.set(trial.food, to: .avoid)
         default: break
-        }
-    }
-
-    private func row(_ title: String, _ value: String) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(value).fontWeight(.semibold)
         }
     }
 }
