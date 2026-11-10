@@ -97,6 +97,7 @@ struct MonthLogView: View {
         .contextMenu {
             Button("Add meal") { onAddToDay(day, .meal) }
             Button("Add bowel movement") { onAddToDay(day, .bowel) }
+            Button("Add bloating") { onAddToDay(day, .bloat) }
         }
     }
 

@@ -2,18 +2,17 @@ import SwiftData
 import SwiftUI
 
 enum LogEntryKind {
-    case meal, bowel
+    case meal, bowel, bloat
 }
 
 enum LogMode: String, CaseIterable, Identifiable {
     case day = "Day"
-    case week = "Week"
     case month = "Month"
 
     var id: String { rawValue }
 }
 
-/// The Log tab: switch between a day timeline, a week of blocks and a month calendar.
+/// The Log tab: switch between a day timeline and a month calendar. Tap a day in the month to open it.
 struct LogView: View {
     @Query(sort: \MealEntry.date) private var entries: [MealEntry]
     @Query(sort: \SupplementLog.date) private var supplementLogs: [SupplementLog]
@@ -25,6 +24,7 @@ struct LogView: View {
     @State private var showingAdd = false
     @State private var addSeed = Date()
     @State private var showingBowel = false
+    @State private var showingBloat = false
 
     private var calendar: Calendar { .current }
 
@@ -53,6 +53,9 @@ struct LogView: View {
             .sheet(isPresented: $showingBowel) {
                 BowelSheet(initialDate: addSeed)
             }
+            .sheet(isPresented: $showingBloat) {
+                BloatSheet(day: addSeed)
+            }
         }
     }
 
@@ -61,6 +64,7 @@ struct LogView: View {
         Menu {
             Button("Meal") { openAdd(addDate, .meal) }
             Button("Bowel movement") { openAdd(addDate, .bowel) }
+            Button("Bloating") { openAdd(addDate, .bloat) }
         } label: {
             Image(systemName: "plus")
                 .font(.title2.weight(.bold))
@@ -96,12 +100,6 @@ struct LogView: View {
         switch mode {
         case .day:
             return selected.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
-        case .week:
-            guard let interval = calendar.dateInterval(of: .weekOfYear, for: selected) else { return "" }
-            let last = calendar.date(byAdding: .day, value: 6, to: interval.start) ?? interval.start
-            let start = interval.start.formatted(.dateTime.month(.abbreviated).day())
-            let end = last.formatted(.dateTime.month(.abbreviated).day())
-            return "\(start) – \(end)"
         case .month:
             return selected.formatted(.dateTime.month(.wide).year())
         }
@@ -112,7 +110,6 @@ struct LogView: View {
         let value: Int
         switch mode {
         case .day: component = .day; value = direction
-        case .week: component = .day; value = 7 * direction
         case .month: component = .month; value = direction
         }
         selected = calendar.date(byAdding: component, value: value, to: selected) ?? selected
@@ -139,16 +136,13 @@ struct LogView: View {
                 check: dailyChecks.first { calendar.isDate($0.day, inSameDayAs: day) },
                 onAddAt: openAdd
             )
-        case .week:
-            WeekLogView(anchor: selected, mealsByDay: mealsByDay, checksByDay: checksByDay,
-                        onSelectDay: openDay, onAddToDay: addOnDay)
         case .month:
             MonthLogView(anchor: selected, mealsByDay: mealsByDay, checksByDay: checksByDay,
                          onSelectDay: openDay, onAddToDay: addOnDay)
         }
     }
 
-    /// Meals grouped by day once, so the week and month views do not scan every meal per cell.
+    /// Meals grouped by day once, so the month view does not scan every meal per cell.
     private var mealsByDay: [Date: [MealEntry]] {
         Dictionary(grouping: entries) { calendar.startOfDay(for: $0.date) }
     }
@@ -171,6 +165,7 @@ struct LogView: View {
         switch kind {
         case .meal: showingAdd = true
         case .bowel: showingBowel = true
+        case .bloat: showingBloat = true
         }
     }
 
