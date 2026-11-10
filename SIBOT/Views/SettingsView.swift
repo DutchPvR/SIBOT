@@ -24,19 +24,17 @@ struct SettingsView: View {
             Form {
                 Section {
                     Stepper(value: $gapHours, in: 1...8, step: 0.5) {
-                        Text("Goal between meals: \(gapText) h")
+                        LabeledContent("Between meals", value: "\(gapText) h")
                     }
                     .onChange(of: gapHours) { _, newValue in
                         MealTimerStore.gapHours = newValue
                     }
                 } header: {
-                    Text("Fasting timer")
-                } footer: {
-                    Text("The timer counts up from your last meal. The goal turns it green and sends a \"you can eat\" notification. The Cedars-Sinai handout recommends at least 4 hours.")
+                    Text("Timer")
                 }
 
                 Section {
-                    Toggle("Fasting goal reached", isOn: $goalNotification)
+                    Toggle("Goal reached", isOn: $goalNotification)
                         .onChange(of: goalNotification) { _, on in
                             MealTimerStore.goalNotificationOn = on
                             if !on {
@@ -46,19 +44,17 @@ struct SettingsView: View {
                                 Task { await MealTimerController.start(at: start) }
                             }
                         }
-                    Toggle("Supplement reminders", isOn: $remindersOn)
+                    Toggle("Supplements", isOn: $remindersOn)
                         .onChange(of: remindersOn) { _, _ in
                             let supplements = (try? modelContext.fetch(FetchDescriptor<Supplement>())) ?? []
                             NotificationManager.rescheduleAll(supplements)
                         }
                 } header: {
                     Text("Notifications")
-                } footer: {
-                    Text("Each supplement can also be turned off on its own in Reminders.")
                 }
 
                 Section {
-                    SecureField("OpenRouter API key (sk-or-…)", text: $apiKey)
+                    SecureField("OpenRouter key", text: $apiKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .focused($fieldFocused)
@@ -69,7 +65,7 @@ struct SettingsView: View {
                         Text("Custom…").tag(Self.customTag)
                     }
                     if isCustomModel {
-                        TextField("Model name, e.g. vendor/model", text: $aiModel)
+                        TextField("vendor/model", text: $aiModel)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .focused($fieldFocused)
@@ -84,13 +80,11 @@ struct SettingsView: View {
                     }
                     .onChange(of: apiKey) { _, _ in keySaved = false }
                 } header: {
-                    Text("AI fallback (optional)")
-                } footer: {
-                    Text("Used for foods that are not on the built-in list. Pick a model, or choose Custom to enter any name from openrouter.ai/models. The key is stored in this phone's Keychain and only sent to OpenRouter.")
+                    Text("AI fallback")
                 }
 
                 Section {
-                    Button("Back up to Files / iCloud Drive") {
+                    Button("Back up") {
                         do {
                             backupDocument = BackupDocument(data: try BackupService.makeData(context: modelContext))
                             showingExporter = true
@@ -98,24 +92,17 @@ struct SettingsView: View {
                             backupMessage = "Could not make the backup: \(error.localizedDescription)"
                         }
                     }
-                    Button("Restore from a backup…") { showingImporter = true }
+                    Button("Restore…") { showingImporter = true }
+                    LabeledContent("Last backup", value: lastBackupText)
                     if let backupMessage {
                         Text(backupMessage).font(.footnote).foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("Backup")
-                } footer: {
-                    Text("Choose iCloud Drive in the Files picker to keep a copy in iCloud. Restoring replaces everything currently in the app.\(lastBackupText)")
                 }
 
                 Section {
-                    Text(FoodDatabase.shared.source)
-                        .font(.footnote)
-                    Text("SIBOT is a personal tracking tool, not medical advice. Follow your doctor or dietitian's guidance.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                } header: {
-                    Text("About the food list")
+                    NavigationLink("About") { AboutView() }
                 }
             }
             .navigationTitle("Settings")
@@ -172,9 +159,9 @@ struct SettingsView: View {
     }
 
     private static let models = [
-        ModelChoice(id: "anthropic/claude-haiku-5.5", name: "Claude Haiku 5.5 (cheap, recommended)"),
-        ModelChoice(id: "google/gemini-3.7-flash", name: "Gemini 3.7 Flash (cheap)"),
-        ModelChoice(id: "anthropic/claude-sonnet-5", name: "Claude Sonnet 5 (best, pricier)")
+        ModelChoice(id: "anthropic/claude-haiku-5.5", name: "Claude Haiku 5.5"),
+        ModelChoice(id: "google/gemini-3.7-flash", name: "Gemini 3.7 Flash"),
+        ModelChoice(id: "anthropic/claude-sonnet-5", name: "Claude Sonnet 5")
     ]
 
     @State private var customSelected = false
@@ -198,12 +185,33 @@ struct SettingsView: View {
     }
 
     private var lastBackupText: String {
-        guard lastBackup > 0 else { return " No backup yet." }
-        return " Last backup: \(Date(timeIntervalSince1970: lastBackup).formatted(date: .abbreviated, time: .shortened))."
+        guard lastBackup > 0 else { return "Never" }
+        return Date(timeIntervalSince1970: lastBackup).formatted(date: .abbreviated, time: .shortened)
     }
 
     private var gapText: String {
         gapHours == gapHours.rounded() ? String(Int(gapHours)) : String(format: "%.1f", gapHours)
     }
 
+}
+
+/// Food list source and the medical note, kept off the main settings list.
+private struct AboutView: View {
+    var body: some View {
+        Form {
+            Section("Food list") {
+                Text(FoodDatabase.shared.source)
+                    .font(.footnote)
+            }
+            Section {
+                Text("Not medical advice. Follow your doctor or dietitian.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Theme.background)
+    }
 }
