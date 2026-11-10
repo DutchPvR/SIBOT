@@ -24,7 +24,6 @@ struct LogView: View {
     @State private var selected = Date()
     @State private var showingAdd = false
     @State private var addSeed = Date()
-    @State private var showingReports = false
     @State private var showingBowel = false
 
     private var calendar: Calendar { .current }
@@ -43,28 +42,11 @@ struct LogView: View {
                     header
                     content
                 }
+                // Room under the last item so the floating button never covers it.
+                .contentMargins(.bottom, 80, for: .scrollContent)
             }
-            .navigationTitle("Log")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showingReports = true
-                    } label: {
-                        Image(systemName: "doc.text")
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button("Meal") { openAdd(addDate, .meal) }
-                        Button("Bowel movement") { openAdd(addDate, .bowel) }
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingReports) {
-                ReportsView()
-            }
+            .overlay(alignment: .bottomTrailing) { addButton }
+            .tabHeader("Log")
             .sheet(isPresented: $showingAdd) {
                 AddMealSheet(initialDate: addSeed)
             }
@@ -72,6 +54,24 @@ struct LogView: View {
                 BowelSheet(initialDate: addSeed)
             }
         }
+    }
+
+    /// Floating add button, bottom right.
+    private var addButton: some View {
+        Menu {
+            Button("Meal") { openAdd(addDate, .meal) }
+            Button("Bowel movement") { openAdd(addDate, .bowel) }
+        } label: {
+            Image(systemName: "plus")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(Theme.purple))
+                .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
+        }
+        .accessibilityLabel("Add")
+        .padding(.trailing, 20)
+        .padding(.bottom, 16)
     }
 
     // MARK: - Header

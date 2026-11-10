@@ -60,15 +60,13 @@ struct RemindersView: View {
                 }
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Reminders")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingNew = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+            .tabHeader("Reminders") {
+                Button {
+                    showingNew = true
+                } label: {
+                    Image(systemName: "plus")
                 }
+                .accessibilityLabel("Add reminder")
             }
             .sheet(isPresented: $showingNew) {
                 SupplementEditSheet(supplement: nil)

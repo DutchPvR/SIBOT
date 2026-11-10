@@ -18,10 +18,22 @@ struct SettingsView: View {
     @State private var goalNotification = MealTimerStore.goalNotificationOn
     @AppStorage(NotificationManager.remindersOnKey) private var remindersOn = true
     @AppStorage(BackupService.lastBackupKey) private var lastBackup: Double = 0
+    @AppStorage(Appearance.defaultsKey) private var appearance: Appearance = .automatic
+    @State private var showingReports = false
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Picker("Appearance", selection: $appearance) {
+                        ForEach(Appearance.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: appearance) { _, newValue in newValue.apply() }
+                } header: {
+                    Text("Appearance")
+                }
+
                 Section {
                     Stepper(value: $gapHours, in: 1...8, step: 0.5) {
                         LabeledContent("Between meals", value: "\(gapText) h")
@@ -84,6 +96,7 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Button("Export log") { showingReports = true }
                     Button("Back up") {
                         do {
                             backupDocument = BackupDocument(data: try BackupService.makeData(context: modelContext))
@@ -98,14 +111,14 @@ struct SettingsView: View {
                         Text(backupMessage).font(.footnote).foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text("Backup")
+                    Text("Data")
                 }
 
                 Section {
                     NavigationLink("About") { AboutView() }
                 }
             }
-            .navigationTitle("Settings")
+            .tabHeader("Settings")
             .scrollContentBackground(.hidden)
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
@@ -119,6 +132,9 @@ struct SettingsView: View {
                 case .success: backupMessage = "Backup saved."
                 case .failure(let error): backupMessage = "Backup failed: \(error.localizedDescription)"
                 }
+            }
+            .sheet(isPresented: $showingReports) {
+                ReportsView()
             }
             .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.json]) { result in
                 if case .success(let url) = result { pendingRestore = url }
