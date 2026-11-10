@@ -9,6 +9,7 @@ struct DayLogView: View {
     let meals: [MealEntry]
     let supplementLogs: [SupplementLog]
     let bowelMovements: [BowelMovement]
+    let bloatEpisodes: [BloatEpisode]
     let check: DailyCheck?
     let onAddAt: (Date, LogEntryKind) -> Void
 
@@ -16,13 +17,15 @@ struct DayLogView: View {
     @State private var addingTo: Date?
     @State private var editingBowel: BowelMovement?
     @State private var editingBloat = false
+    @State private var editingEpisode: BloatEpisode?
 
     private var calendar: Calendar { .current }
 
     var body: some View {
         timeline
         .sheet(item: $editingMeal) { EditMealSheet(meal: $0) }
-        .sheet(isPresented: $editingBloat) { BloatSheet(day: day) }
+        .sheet(isPresented: $editingBloat) { BloatSheet(day: day, startsAsNoBloat: check?.answer == false) }
+        .sheet(item: $editingEpisode) { BloatSheet(day: $0.date, episode: $0) }
         .sheet(item: $editingBowel) { BowelSheet(existing: $0) }
         .sheet(isPresented: Binding(get: { addingTo != nil }, set: { if !$0 { addingTo = nil } })) {
             AddMealSheet(initialDate: addingTo ?? Date(), title: "Add to this meal")
@@ -36,15 +39,18 @@ struct DayLogView: View {
         let mealsByHour = Dictionary(grouping: meals) { hour($0.date) }
         let supplementsByHour = Dictionary(grouping: supplementLogs) { hour($0.date) }
         let bowelByHour = Dictionary(grouping: bowelMovements) { hour($0.date) }
+        let bloatByHour = Dictionary(grouping: bloatEpisodes) { hour($0.date) }
         return ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
-                    if let check, check.answered {
+                    // Bloating has its own time now; this row is only for a "No bloat" day.
+                    if let check, check.answered, bloatEpisodes.isEmpty {
                         bloatRow(check)
                     }
                     ForEach(0..<24, id: \.self) { hour in
                         hourRow(hour, meals: mealsByHour[hour] ?? [],
-                                supplements: supplementsByHour[hour] ?? [], bowel: bowelByHour[hour] ?? [])
+                                supplements: supplementsByHour[hour] ?? [], bowel: bowelByHour[hour] ?? [],
+                                bloat: bloatByHour[hour] ?? [])
                             .id(hour)
                     }
                 }
@@ -77,7 +83,8 @@ struct DayLogView: View {
     }
 
     private func hourRow(_ hour: Int, meals hourMeals: [MealEntry],
-                         supplements hourSupplements: [SupplementLog], bowel hourBowel: [BowelMovement]) -> some View {
+                         supplements hourSupplements: [SupplementLog], bowel hourBowel: [BowelMovement],
+                         bloat hourBloat: [BloatEpisode]) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text(hourLabel(hour))
                 .font(.system(.caption).weight(.semibold))
@@ -88,6 +95,9 @@ struct DayLogView: View {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(hourMeals) { meal in
                     mealPill(meal)
+                }
+                ForEach(hourBloat) { episode in
+                    episodeRow(episode)
                 }
                 ForEach(hourBowel) { movement in
                     bowelRow(movement)
@@ -107,7 +117,7 @@ struct DayLogView: View {
             let time = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day
             Button("Add meal at \(hourLabel(hour))") { onAddAt(time, .meal) }
             Button("Add bowel movement at \(hourLabel(hour))") { onAddAt(time, .bowel) }
-            Button("Add bloating") { onAddAt(time, .bloat) }
+            Button("Add bloating at \(hourLabel(hour))") { onAddAt(time, .bloat) }
         }
     }
 
@@ -145,6 +155,27 @@ struct DayLogView: View {
             .foregroundStyle(.primary)
             .padding(.vertical, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+    }
+
+    private func episodeRow(_ episode: BloatEpisode) -> some View {
+        Menu {
+            Button { editingEpisode = episode } label: { Label("Edit", systemImage: "pencil") }
+            Button("Delete", role: .destructive) { BloatLog.delete(episode, in: modelContext) }
+        } label: {
+            HStack(spacing: 8) {
+                BloatMark(bloated: true, color: .secondary, size: 10)
+                Text(episode.summaryText)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+                Text(episode.date.formatted(date: .omitted, time: .shortened))
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 2)
             .contentShape(Rectangle())
         }
     }

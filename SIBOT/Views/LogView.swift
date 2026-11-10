@@ -156,6 +156,7 @@ private struct DayLogLoader: View {
     @Query private var meals: [MealEntry]
     @Query private var supplementLogs: [SupplementLog]
     @Query private var bowelMovements: [BowelMovement]
+    @Query private var bloatEpisodes: [BloatEpisode]
     @Query private var checks: [DailyCheck]
 
     init(day: Date, onAddAt: @escaping (Date, LogEntryKind) -> Void) {
@@ -166,12 +167,14 @@ private struct DayLogLoader: View {
         _meals = Query(filter: #Predicate<MealEntry> { $0.date >= start && $0.date < end }, sort: \.date)
         _supplementLogs = Query(filter: #Predicate<SupplementLog> { $0.date >= start && $0.date < end }, sort: \.date)
         _bowelMovements = Query(filter: #Predicate<BowelMovement> { $0.date >= start && $0.date < end }, sort: \.date)
+        _bloatEpisodes = Query(filter: #Predicate<BloatEpisode> { $0.date >= start && $0.date < end }, sort: \.date)
         _checks = Query(filter: #Predicate<DailyCheck> { $0.day >= start && $0.day < end })
     }
 
     var body: some View {
         DayLogView(day: day, meals: meals, supplementLogs: supplementLogs,
-                   bowelMovements: bowelMovements, check: checks.first, onAddAt: onAddAt)
+                   bowelMovements: bowelMovements, bloatEpisodes: bloatEpisodes,
+                   check: checks.first, onAddAt: onAddAt)
     }
 }
 

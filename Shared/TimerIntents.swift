@@ -20,3 +20,14 @@ struct StopMealTimerIntent: LiveActivityIntent {
         return .result()
     }
 }
+
+/// Logs bloating at the current time. Used by the Quick log widget, Siri, Shortcuts and the Action button.
+struct LogBloatIntent: AppIntent {
+    static var title: LocalizedStringResource = "Log bloating"
+    static var description = IntentDescription("Adds a bloating entry to your diary at the current time.")
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        PendingLog.addBloat()
+        return .result(dialog: "Bloating logged.")
+    }
+}

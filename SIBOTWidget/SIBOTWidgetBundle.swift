@@ -5,6 +5,7 @@ import WidgetKit
 struct SIBOTWidgetBundle: WidgetBundle {
     var body: some Widget {
         MealTimerWidget()
+        QuickLogWidget()
         MealTimerLiveActivity()
     }
 }

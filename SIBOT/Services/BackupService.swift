@@ -35,6 +35,7 @@ struct BackupFile: Codable {
         var slot: Int?
     }
 
+    struct Bloat: Codable { var date: Date; var severity: Int; var symptoms: String }
     struct Bowel: Codable { var date: Date; var type: Int }
     struct Trial: Codable { var food: String; var startDate: Date; var result: Int; var notes: String }
 
@@ -42,6 +43,7 @@ struct BackupFile: Codable {
     var personalFoods: [String: String]?
     var trials: [Trial]?
     var bowelMovements: [Bowel]?
+    var bloatEpisodes: [Bloat]?
     var exportedAt = Date()
     var gapHours: Double = 5
     var meals: [Meal] = []
@@ -90,6 +92,9 @@ enum BackupService {
             .init(supplementID: $0.supplementID, supplementName: $0.supplementName, date: $0.date, day: $0.day, taken: $0.taken, slot: $0.slot)
         }
         file.personalFoods = PersonalFoods.all
+        file.bloatEpisodes = try context.fetch(FetchDescriptor<BloatEpisode>()).map {
+            .init(date: $0.date, severity: $0.severity, symptoms: $0.symptomsRaw)
+        }
         file.bowelMovements = try context.fetch(FetchDescriptor<BowelMovement>()).map { .init(date: $0.date, type: $0.type) }
         file.trials = try context.fetch(FetchDescriptor<FoodTrial>()).map {
             .init(food: $0.food, startDate: $0.startDate, result: $0.resultRaw, notes: $0.notes)
@@ -125,6 +130,7 @@ enum BackupService {
         try context.delete(model: SupplementLog.self)
         try context.delete(model: FoodTrial.self)
         try context.delete(model: BowelMovement.self)
+        try context.delete(model: BloatEpisode.self)
 
         for m in file.meals {
             context.insert(MealEntry(date: m.date, text: text(m.text),
@@ -167,10 +173,17 @@ enum BackupService {
             context.insert(trial)
         }
         for b in file.bowelMovements ?? [] { context.insert(BowelMovement(date: b.date, type: min(max(b.type, 0), 7))) }
+        for b in file.bloatEpisodes ?? [] {
+            let episode = BloatEpisode(date: b.date, severity: min(max(b.severity, 0), 5))
+            episode.symptomsRaw = text(b.symptoms, 200)
+            context.insert(episode)
+        }
         if let personal = file.personalFoods {
             PersonalFoods.all = personal.filter { FoodStatus(rawValue: $0.value) != nil && $0.key.count <= 100 }
         }
         try context.save()
+        // Backups from before bloating had a time: give those days an entry.
+        BloatLog.migrateLegacy(in: context)
         MealTimerStore.gapHours = min(max(file.gapHours, 1), 8)
         WatchSync.shared.push()
         NotificationManager.rescheduleAll(restored)
