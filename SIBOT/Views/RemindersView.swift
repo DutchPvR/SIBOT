@@ -19,7 +19,7 @@ struct RemindersView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.background
+                Theme.groupedBackground
                 List {
                     Section("Today") {
                         if supplements.isEmpty {
@@ -60,7 +60,7 @@ struct RemindersView: View {
                 }
                 .scrollContentBackground(.hidden)
             }
-            .tabHeader("Reminders") {
+            .tabHeader("Reminders", grouped: true) {
                 Button {
                     showingNew = true
                 } label: {

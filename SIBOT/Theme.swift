@@ -15,6 +15,14 @@ enum Theme {
     static var background: some View {
         Color(.systemBackground).ignoresSafeArea()
     }
+
+    /// Page colour behind grouped boxes (Settings, Reminders): light grey in light mode, black in dark mode,
+    /// so the white or dark grey boxes stand out in both.
+    static let groupedFill = Color(.systemGroupedBackground)
+
+    static var groupedBackground: some View {
+        groupedFill.ignoresSafeArea()
+    }
 }
 
 /// A plain block with no box around it.
@@ -99,6 +107,7 @@ enum Appearance: String, CaseIterable, Identifiable {
 /// The title at the top of each tab. Same size, weight and height on every tab, and it never collapses.
 struct TabHeader<Trailing: View>: View {
     let title: String
+    var background: Color = Color(.systemBackground)
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
@@ -114,7 +123,7 @@ struct TabHeader<Trailing: View>: View {
         }
         .padding(.horizontal, 20)
         .frame(height: 56)
-        .background(Color(.systemBackground))
+        .background(background)
     }
 }
 
@@ -126,12 +135,16 @@ extension TabHeader where Trailing == EmptyView {
 
 extension View {
     /// Puts the tab title above the content and hides the system navigation bar on that tab only.
-    func tabHeader(_ title: String) -> some View {
-        tabHeader(title) { EmptyView() }
+    /// Pass grouped: true on screens with grouped boxes so the header matches their page colour.
+    func tabHeader(_ title: String, grouped: Bool = false) -> some View {
+        tabHeader(title, grouped: grouped) { EmptyView() }
     }
 
-    func tabHeader<Trailing: View>(_ title: String, @ViewBuilder trailing: () -> Trailing) -> some View {
-        let header = TabHeader(title: title, trailing: trailing)
+    func tabHeader<Trailing: View>(_ title: String, grouped: Bool = false,
+                                   @ViewBuilder trailing: () -> Trailing) -> some View {
+        let header = TabHeader(title: title,
+                               background: grouped ? Theme.groupedFill : Color(.systemBackground),
+                               trailing: trailing)
         return self
             .safeAreaInset(edge: .top, spacing: 0) { header }
             .navigationTitle(title)
