@@ -15,6 +15,8 @@ struct SIBOTApp: App {
         UINavigationBar.appearance().scrollEdgeAppearance = nav
         UNUserNotificationCenter.current().delegate = notificationDelegate
         NotificationManager.registerCategories()
+        WatchSync.shared.activate()
+        MealTimerController.didChange = { WatchSync.shared.push() }
     }
 
     var body: some Scene {

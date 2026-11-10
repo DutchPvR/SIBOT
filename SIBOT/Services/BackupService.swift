@@ -146,6 +146,7 @@ enum BackupService {
         if let personal = file.personalFoods { PersonalFoods.all = personal }
         try context.save()
         MealTimerStore.gapHours = file.gapHours
+        WatchSync.shared.push()
         NotificationManager.rescheduleAll(restored)
     }
 }

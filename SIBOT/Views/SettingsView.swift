@@ -28,6 +28,7 @@ struct SettingsView: View {
                     }
                     .onChange(of: gapHours) { _, newValue in
                         MealTimerStore.gapHours = newValue
+                        WatchSync.shared.push()
                     }
                 } header: {
                     Text("Fasting timer")
