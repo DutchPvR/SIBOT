@@ -22,6 +22,7 @@ struct SIBOTApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear { Appearance.saved.apply() }
                 .task { await setUpReminders() }
         }
         .modelContainer(Persistence.container)

@@ -27,7 +27,7 @@ struct TimerView: View {
                 .padding()
             }
             .background(Theme.background)
-            .navigationTitle("Fasting")
+            .tabHeader("Fasting")
         }
         .sheet(isPresented: $showingAte) {
             AddMealSheet(initialDate: Date(), title: "I just ate")

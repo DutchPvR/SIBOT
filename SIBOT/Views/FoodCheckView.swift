@@ -19,7 +19,7 @@ struct FoodCheckView: View {
                 searchRow
                 FoodCheckContent(query: query, isSearching: searchFocused)
             }
-                .navigationTitle("Check")
+                .tabHeader("Check")
                 // Open the results only once the camera has fully closed.
                 .fullScreenCover(isPresented: $showingCamera, onDismiss: {
                     if let image = cameraImage { scan = ScanImage(image: image) }

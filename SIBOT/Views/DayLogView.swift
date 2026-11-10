@@ -15,15 +15,14 @@ struct DayLogView: View {
     @State private var editingMeal: MealEntry?
     @State private var addingTo: Date?
     @State private var editingBowel: BowelMovement?
+    @State private var editingBloat = false
 
     private var calendar: Calendar { .current }
 
     var body: some View {
-        VStack(spacing: 0) {
-            BloatCheckBar(day: day, check: check)
-            timeline
-        }
+        timeline
         .sheet(item: $editingMeal) { EditMealSheet(meal: $0) }
+        .sheet(isPresented: $editingBloat) { BloatSheet(day: day) }
         .sheet(item: $editingBowel) { BowelSheet(existing: $0) }
         .sheet(isPresented: Binding(get: { addingTo != nil }, set: { if !$0 { addingTo = nil } })) {
             AddMealSheet(initialDate: addingTo ?? Date(), title: "Add to this meal")
@@ -34,6 +33,9 @@ struct DayLogView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
+                    if let check, check.answered {
+                        bloatRow(check)
+                    }
                     ForEach(0..<24, id: \.self) { hour in
                         hourRow(hour)
                             .id(hour)
@@ -101,6 +103,7 @@ struct DayLogView: View {
             let time = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day) ?? day
             Button("Add meal at \(hourLabel(hour))") { onAddAt(time, .meal) }
             Button("Add bowel movement at \(hourLabel(hour))") { onAddAt(time, .bowel) }
+            Button("Add bloating") { onAddAt(time, .bloat) }
         }
     }
 
@@ -161,6 +164,39 @@ struct DayLogView: View {
             }
             .padding(.vertical, 2)
             .contentShape(Rectangle())
+        }
+    }
+
+    /// The day's bloating, pinned above the hours because it is logged once per day.
+    private func bloatRow(_ check: DailyCheck) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("Day")
+                .font(.system(.caption).weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 48, alignment: .trailing)
+                .padding(.top, 6)
+
+            Menu {
+                Button { editingBloat = true } label: { Label("Edit", systemImage: "pencil") }
+                Button("Delete", role: .destructive) {
+                    check.answered = false
+                    check.severity = 0
+                    check.symptoms = []
+                    if check.isEmpty { modelContext.delete(check) }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    BloatMark(bloated: check.bloated, color: .secondary, size: 10)
+                    Text(check.summaryText)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                }
+                .padding(.vertical, 8)
+                .contentShape(Rectangle())
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

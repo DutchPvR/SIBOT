@@ -56,3 +56,85 @@ struct StatusBadge: View {
         .foregroundStyle(status.color)
     }
 }
+
+/// Light / Dark / Automatic, chosen in Settings. Applied to the app's windows so sheets follow it too.
+enum Appearance: String, CaseIterable, Identifiable {
+    case automatic, light, dark
+
+    static let defaultsKey = "appearance"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .automatic: "Auto"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    private var style: UIUserInterfaceStyle {
+        switch self {
+        case .automatic: .unspecified
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+
+    static var saved: Appearance {
+        Appearance(rawValue: UserDefaults.standard.string(forKey: defaultsKey) ?? "") ?? .automatic
+    }
+
+    @MainActor
+    func apply() {
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                window.overrideUserInterfaceStyle = style
+            }
+        }
+    }
+}
+
+/// The title at the top of each tab. Same size, weight and height on every tab, and it never collapses.
+struct TabHeader<Trailing: View>: View {
+    let title: String
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 34, weight: .heavy))
+                .foregroundStyle(Theme.purple)
+                .lineLimit(1)
+            Spacer()
+            trailing
+                .font(.title3.weight(.semibold))
+                .tint(Theme.purple)
+        }
+        .padding(.horizontal, 20)
+        .frame(height: 56)
+        .background(Color(.systemBackground))
+    }
+}
+
+extension TabHeader where Trailing == EmptyView {
+    init(_ title: String) {
+        self.init(title: title) { EmptyView() }
+    }
+}
+
+extension View {
+    /// Puts the tab title above the content and hides the system navigation bar on that tab only.
+    func tabHeader(_ title: String) -> some View {
+        tabHeader(title) { EmptyView() }
+    }
+
+    func tabHeader<Trailing: View>(_ title: String, @ViewBuilder trailing: () -> Trailing) -> some View {
+        let header = TabHeader(title: title, trailing: trailing)
+        return self
+            .safeAreaInset(edge: .top, spacing: 0) { header }
+            .navigationTitle(title)
+            .toolbar(.hidden, for: .navigationBar)
+    }
+}
