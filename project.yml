@@ -27,6 +27,7 @@ targets:
         CFBundleDisplayName: SIBOT
         UILaunchScreen: {}
         NSSupportsLiveActivities: true
+        NSFaceIDUsageDescription: SIBOT uses Face ID to unlock your diary.
         NSCameraUsageDescription: SIBOT uses the camera to read restaurant menus and suggest the safest dishes.
         ITSAppUsesNonExemptEncryption: false
         UISupportedInterfaceOrientations:

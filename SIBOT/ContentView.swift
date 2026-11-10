@@ -24,8 +24,11 @@ struct ContentView: View {
         .onChange(of: meals.map(\.date)) { _, _ in
             Task { await MealTimerSync.sync(meals) }
         }
+        .onAppear { AppLock.shared.sceneChanged(.active) }
         .onChange(of: scenePhase) { _, phase in
+            AppLock.shared.sceneChanged(phase)
             if phase == .active {
+                BloatLog.reconcilePending(in: modelContext)
                 MealTimerSync.reconcile(meals, context: modelContext)
                 WatchSync.shared.push()
             }

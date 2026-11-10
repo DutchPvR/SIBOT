@@ -9,6 +9,7 @@ enum ReportBuilder {
         let supplements: [Supplement]
         let supplementLogs: [SupplementLog]
         let bowelMovements: [BowelMovement]
+        let bloatEpisodes: [BloatEpisode]
     }
 
     private static var calendar: Calendar { .current }
@@ -44,7 +45,14 @@ enum ReportBuilder {
                 let symptoms = meal.symptomScore.map { "symptoms \($0)/5" } ?? ""
                 row(day, timeText(meal.date), "Meal", meal.text, meal.status.label, symptoms)
             }
-            if let check = input.checks.first(where: { calendar.isDate($0.day, inSameDayAs: day) }) {
+            let episodes = input.bloatEpisodes.filter { calendar.isDate($0.date, inSameDayAs: day) }.sorted { $0.date < $1.date }
+            for episode in episodes {
+                var details: [String] = []
+                if episode.severity > 0 { details.append("severity \(episode.severity)/5") }
+                if !episode.symptoms.isEmpty { details.append(episode.symptoms.joined(separator: " + ")) }
+                row(day, timeText(episode.date), "Bloat", "Bloated", "Bloated", details.joined(separator: "; "))
+            }
+            if episodes.isEmpty, let check = input.checks.first(where: { calendar.isDate($0.day, inSameDayAs: day) }) {
                 if let bloated = check.answer {
                     var details: [String] = []
                     if check.severity > 0 { details.append("severity \(check.severity)/5") }
@@ -143,7 +151,7 @@ enum ReportBuilder {
             }
 
             // Possible triggers
-            let insight = Insights.analyze(meals: input.meals, checks: input.checks)
+            let insight = Insights.analyze(meals: input.meals, checks: input.checks, episodes: input.bloatEpisodes)
             page.write("POSSIBLE TRIGGERS", font: heading, after: 4)
             if insight.hasEnoughData && !insight.suspects.isEmpty {
                 for suspect in insight.suspects {
@@ -169,7 +177,11 @@ enum ReportBuilder {
                     if bloated, let severity = check?.severity, severity > 0 { header += " (\(severity)/5)" }
                 }
                 page.write(header, font: bold, after: 2)
-                if let check, check.answer == true, !check.symptoms.isEmpty {
+                let episodes = input.bloatEpisodes.filter { calendar.isDate($0.date, inSameDayAs: day) }.sorted { $0.date < $1.date }
+                for episode in episodes {
+                    page.write("\(timeText(episode.date))  \(episode.summaryText)", font: body, indent: 12, after: 1)
+                }
+                if episodes.isEmpty, let check, check.answer == true, !check.symptoms.isEmpty {
                     page.write("Symptoms: \(check.symptoms.joined(separator: ", "))", font: body, color: grey, indent: 12, after: 1)
                 }
                 let movements = input.bowelMovements.filter { calendar.isDate($0.date, inSameDayAs: day) }

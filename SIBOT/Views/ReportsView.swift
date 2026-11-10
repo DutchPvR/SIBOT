@@ -9,6 +9,7 @@ struct ReportsView: View {
     @Query private var supplements: [Supplement]
     @Query private var supplementLogs: [SupplementLog]
     @Query private var bowelMovements: [BowelMovement]
+    @Query private var bloatEpisodes: [BloatEpisode]
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FoodTrial.startDate, order: .reverse) private var trials: [FoodTrial]
     @State private var showingNewTrial = false
@@ -20,7 +21,7 @@ struct ReportsView: View {
     @State private var insight = InsightResult.empty
 
     private var input: ReportBuilder.Input {
-        ReportBuilder.Input(days: days, meals: meals, checks: checks, supplements: supplements, supplementLogs: supplementLogs, bowelMovements: bowelMovements)
+        ReportBuilder.Input(days: days, meals: meals, checks: checks, supplements: supplements, supplementLogs: supplementLogs, bowelMovements: bowelMovements, bloatEpisodes: bloatEpisodes)
     }
 
     var body: some View {
@@ -124,8 +125,8 @@ struct ReportsView: View {
                 Button("Cancel", role: .cancel) { newTrialFood = "" }
             }
             .task(id: days) { files = ReportBuilder.writeFiles(input) }
-            .task(id: [meals.count, checks.count]) {
-                insight = Insights.analyze(meals: meals, checks: checks)
+            .task(id: [meals.count, checks.count, bloatEpisodes.count]) {
+                insight = Insights.analyze(meals: meals, checks: checks, episodes: bloatEpisodes)
             }
         }
     }

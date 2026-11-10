@@ -21,6 +21,8 @@ struct SettingsView: View {
     @AppStorage(BackupService.lastBackupKey) private var lastBackup: Double = 0
     @AppStorage(Appearance.defaultsKey) private var appearance: Appearance = .automatic
     @State private var showingReports = false
+    @AppStorage(AppLock.enabledKey) private var appLockOn = false
+    @State private var lockMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -65,6 +67,15 @@ struct SettingsView: View {
                         }
                 } header: {
                     Text("Notifications")
+                }
+
+                Section {
+                    Toggle("App lock", isOn: appLockBinding)
+                    if let lockMessage {
+                        Text(lockMessage).font(.footnote).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Privacy")
                 }
 
                 Section {
@@ -204,6 +215,26 @@ struct SettingsView: View {
                 } else {
                     customSelected = false
                     aiModel = choice
+                }
+            }
+        )
+    }
+
+    /// Turning the lock on or off asks for Face ID (or the passcode) first.
+    private var appLockBinding: Binding<Bool> {
+        Binding(
+            get: { appLockOn },
+            set: { wanted in
+                Task {
+                    switch await AppLock.authenticate(reason: wanted ? "Turn on the app lock" : "Turn off the app lock") {
+                    case .some(true):
+                        appLockOn = wanted
+                        lockMessage = nil
+                    case .none:
+                        lockMessage = "Set a passcode on this iPhone first."
+                    default:
+                        break
+                    }
                 }
             }
         )

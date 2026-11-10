@@ -17,6 +17,10 @@ struct SIBOTApp: App {
         WatchSync.shared.activate()
         ReportBuilder.clearExports()
         MealTimerController.didChange = { WatchSync.shared.push() }
+        // Bloating logged by a shortcut while the app is running goes straight into the diary.
+        PendingLog.onAdd = {
+            Task { @MainActor in BloatLog.reconcilePending(in: Persistence.container.mainContext) }
+        }
     }
 
     var body: some Scene {
@@ -44,6 +48,8 @@ struct SIBOTApp: App {
         }
 
         BowelMovement.migrateFromDailyChecks(context)
+        BloatLog.migrateLegacy(in: context)
+        BloatLog.reconcilePending(in: context)
         SupplementLogger.migrateLegacySlots(context)
 
         let supplements = (try? context.fetch(FetchDescriptor<Supplement>())) ?? []

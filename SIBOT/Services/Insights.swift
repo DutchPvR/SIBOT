@@ -24,8 +24,15 @@ struct InsightResult {
 /// Looks back from each journal day to the food eaten that day and the days before it,
 /// and shows which foods turn up more before bloated days than before clear days.
 enum Insights {
-    static func analyze(meals: [MealEntry], checks: [DailyCheck], windowDays: Int = 2) -> InsightResult {
+    static func analyze(meals: [MealEntry], checks: [DailyCheck], episodes: [BloatEpisode] = [],
+                        windowDays: Int = 2) -> InsightResult {
         let cal = Calendar.current
+        // When the bloating started each day, if a time was logged.
+        var firstBloat: [Date: Date] = [:]
+        for episode in episodes {
+            let day = cal.startOfDay(for: episode.date)
+            firstBloat[day] = min(firstBloat[day] ?? episode.date, episode.date)
+        }
         let byDay = Dictionary(grouping: meals) { cal.startOfDay(for: $0.date) }
         var bloatedSets: [Set<String>] = []
         var clearSets: [Set<String>] = []
@@ -35,9 +42,13 @@ enum Insights {
         for check in checks {
             guard let bloated = check.answer else { continue }
             let end = cal.startOfDay(for: check.day)
-            let window = (0...windowDays).flatMap { offset -> [MealEntry] in
+            var window = (0...windowDays).flatMap { offset -> [MealEntry] in
                 guard let day = cal.date(byAdding: .day, value: -offset, to: end) else { return [] }
                 return byDay[day] ?? []
+            }
+            // Food eaten after the bloating started cannot have caused it.
+            if bloated, let started = firstBloat[end] {
+                window = window.filter { $0.date <= started }
             }
             let foods = Set(window.flatMap { foodNames($0.text) })
             let risk = window.filter { $0.status == .limit || $0.status == .avoid }.count
