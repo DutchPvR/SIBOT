@@ -108,6 +108,8 @@ struct SettingsView: View {
                     Text("Choose iCloud Drive in the Files picker to keep a copy in iCloud. Restoring replaces everything currently in the app.\(lastBackupText)")
                 }
 
+                NotionSyncSection()
+
                 Section {
                     Text(FoodDatabase.shared.source)
                         .font(.footnote)

@@ -87,3 +87,16 @@ iPhone Keychain and sent only to openrouter.ai. Without a key, the app still wor
 - `Shared/` timer state, controller and App Intents, compiled into both targets
 - `SIBOT/` the app (SwiftUI, SwiftData, Swift Charts)
 - `SIBOTWidget/` home screen widget and Live Activity
+
+## Notion sync (optional)
+
+SIBOT can send meals, bloat checks, supplement doses and bowel movements to a Notion database,
+so you can read and chart them there. It syncs when the app opens and from **Settings → Notion sync → Sync now**.
+Only new or changed entries are sent, and each entry updates the same Notion row instead of adding a copy.
+
+1. At https://www.notion.so/profile/integrations, create an **Internal** integration (Read, Update and Insert content) and copy its secret.
+2. Open the SIBOT Log database in Notion, tap **•••** → **Connections** and add the integration.
+3. In the app, open **Settings → Notion sync**, paste the secret and tap **Sync now**.
+
+The secret is stored in the phone's Keychain and only sent to Notion. The data source ID defaults to the
+SIBOT Log database; set another one in Settings to point the app somewhere else.
