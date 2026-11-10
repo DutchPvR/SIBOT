@@ -19,6 +19,10 @@ struct FoodCheckView: View {
                 searchRow
                 FoodCheckContent(query: query, isSearching: searchFocused)
             }
+                .floatingButton {
+                    // Out of the way while you type.
+                    if !searchFocused { scanButton }
+                }
                 .tabHeader("Check")
                 // Open the results only once the camera has fully closed.
                 .fullScreenCover(isPresented: $showingCamera, onDismiss: {
@@ -68,19 +72,6 @@ struct FoodCheckView: View {
             .padding(.vertical, 10)
             .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
-            Menu {
-                if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                    Button("Take a photo of a menu") { showingCamera = true }
-                }
-                Button("Choose a menu photo") { showingLibrary = true }
-            } label: {
-                Image(systemName: "camera")
-                    .font(.title3)
-                    .frame(width: 44, height: 44)
-            }
-            .tint(Theme.purple)
-            .accessibilityLabel("Scan a menu")
-
             if searchFocused {
                 Button("Cancel") {
                     query = ""
@@ -89,9 +80,23 @@ struct FoodCheckView: View {
                 .tint(Theme.purple)
             }
         }
-        .padding(.horizontal)
+        .padding(.horizontal, Theme.pageMargin)
+        .padding(.top, Theme.titleGap)
         .padding(.bottom, 4)
         .animation(.default, value: searchFocused)
+    }
+
+    /// Floating plus, bottom right: scan a menu with the camera or from a saved photo.
+    private var scanButton: some View {
+        Menu {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button { showingCamera = true } label: { Label("Take a photo of a menu", systemImage: "camera") }
+            }
+            Button { showingLibrary = true } label: { Label("Upload a menu photo", systemImage: "photo") }
+        } label: {
+            FloatingPlus()
+        }
+        .accessibilityLabel("Scan a menu")
     }
 }
 
@@ -125,7 +130,8 @@ private struct FoodCheckContent: View {
                         cheatSheet
                     }
                 }
-                .padding()
+                .padding(.horizontal, Theme.pageMargin)
+                .padding(.vertical, 16)
             }
             .scrollDismissesKeyboard(.interactively)
         }

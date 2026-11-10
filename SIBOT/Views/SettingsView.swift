@@ -116,6 +116,7 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink("Analytics") { AnalyticsView() }
                     Button("Export log") { showingReports = true }
                     Button("Back up") {
                         do {
@@ -140,6 +141,7 @@ struct SettingsView: View {
             }
             .tabHeader("Settings", grouped: true)
             .scrollContentBackground(.hidden)
+            .pageList()
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.groupedBackground)
             .fileExporter(
