@@ -115,5 +115,5 @@ targets:
           - group.com.dutchpvr.sibot
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.dutchpvr.sibot.watchkitapp.complication
+        PRODUCT_BUNDLE_IDENTIFIER: com.dutchpvr.sibot.watchkitapp.safetoeat
         TARGETED_DEVICE_FAMILY: "4"
