@@ -66,12 +66,7 @@ struct LogView: View {
             Button("Bowel movement") { openAdd(addDate, .bowel) }
             Button("Bloating") { openAdd(addDate, .bloat) }
         } label: {
-            Image(systemName: "plus")
-                .font(.title2.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
-                .background(Circle().fill(Theme.purple))
-                .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
+            FloatingPlus()
         }
         .accessibilityLabel("Add")
         .padding(.trailing, 20)

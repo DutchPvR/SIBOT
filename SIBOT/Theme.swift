@@ -151,3 +151,15 @@ extension View {
             .toolbar(.hidden, for: .navigationBar)
     }
 }
+
+/// The round purple plus used as the floating add button (Log, Reminders).
+struct FloatingPlus: View {
+    var body: some View {
+        Image(systemName: "plus")
+            .font(.title2.weight(.bold))
+            .foregroundStyle(.white)
+            .frame(width: 56, height: 56)
+            .background(Circle().fill(Theme.purple))
+            .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
+    }
+}
