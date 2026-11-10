@@ -28,10 +28,8 @@ struct LogView: View {
                     header
                     DayLogLoader(day: selected, scrollToken: jumpToNow, onAddAt: openAdd)
                 }
-                // Room under the last item so the floating button never covers it.
-                .contentMargins(.bottom, 80, for: .scrollContent)
             }
-            .overlay(alignment: .bottomTrailing) { addButton }
+            .floatingButton { addButton }
             .tabHeader("Log")
             .onChange(of: jumpToNow) { _, _ in selected = Date() }
             .sheet(isPresented: $showingAdd) {
@@ -84,8 +82,6 @@ struct LogView: View {
             FloatingPlus()
         }
         .accessibilityLabel("Add")
-        .padding(.trailing, 20)
-        .padding(.bottom, 16)
     }
 
     // MARK: - Header
@@ -109,7 +105,8 @@ struct LogView: View {
                 .accessibilityLabel("Next day")
                 .disabled(calendar.isDateInToday(selected))
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, Theme.pageMargin)
+        .padding(.top, Theme.titleGap)
         .tint(Theme.purple)
     }
 

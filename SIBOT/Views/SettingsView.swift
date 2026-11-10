@@ -141,6 +141,7 @@ struct SettingsView: View {
             }
             .tabHeader("Settings", grouped: true)
             .scrollContentBackground(.hidden)
+            .pageList()
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.groupedBackground)
             .fileExporter(

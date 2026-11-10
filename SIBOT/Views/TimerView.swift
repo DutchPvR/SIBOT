@@ -20,11 +20,12 @@ struct TimerView: View {
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 VStack(spacing: 24) {
                     statusCard(now: context.date)
-                        .padding(.top, 40)
+                        .padding(.top, Theme.titleGap)
                     Spacer()
                     buttons
                 }
-                .padding()
+                .padding(.horizontal, Theme.pageMargin)
+                .padding(.bottom, 16)
             }
             .background(Theme.background)
             .tabHeader("Fasting")

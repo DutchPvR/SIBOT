@@ -60,7 +60,7 @@ struct DayLogView: View {
                             .id(hour)
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, Theme.pageMargin)
                 .padding(.bottom, 24)
             }
             .onAppear { scroll(proxy) }

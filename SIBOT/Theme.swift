@@ -12,6 +12,12 @@ enum Theme {
     static let red = Color(red: 0.86, green: 0.15, blue: 0.15)
     static let hairline = Color.primary.opacity(0.12)
 
+    // One set of measurements for every tab, so nothing shifts when you switch between them.
+    /// Space on the left and right of the title and of the content under it.
+    static let pageMargin: CGFloat = 20
+    /// Space between the tab title and the first thing under it.
+    static let titleGap: CGFloat = 12
+
     static var background: some View {
         Color(.systemBackground).ignoresSafeArea()
     }
@@ -121,7 +127,7 @@ struct TabHeader<Trailing: View>: View {
                 .font(.title3.weight(.semibold))
                 .tint(Theme.purple)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, Theme.pageMargin)
         .frame(height: 56)
         .background(background)
     }
@@ -153,6 +159,23 @@ extension View {
 }
 
 extension View {
+    /// The floating button sits in the same bottom-right spot on every tab,
+    /// with room left under the content so it never covers the last row.
+    func floatingButton<Button: View>(@ViewBuilder _ button: () -> Button) -> some View {
+        contentMargins(.bottom, 80, for: .scrollContent)
+            .overlay(alignment: .bottomTrailing) {
+                button()
+                    .padding(.trailing, Theme.pageMargin)
+                    .padding(.bottom, 16)
+            }
+    }
+
+    /// Lists (Reminders, Settings) line up with the title and start right under it, like the other tabs.
+    func pageList() -> some View {
+        contentMargins(.horizontal, Theme.pageMargin, for: .scrollContent)
+            .contentMargins(.top, 0, for: .scrollContent)
+    }
+
     /// The same page colour behind every sheet and settings-style list.
     func groupedPage() -> some View {
         scrollContentBackground(.hidden).background(Theme.groupedBackground)
