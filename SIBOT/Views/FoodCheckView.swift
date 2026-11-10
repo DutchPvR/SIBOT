@@ -86,7 +86,7 @@ struct FoodCheckView: View {
         .animation(.default, value: searchFocused)
     }
 
-    /// Floating plus, bottom right: scan a menu with the camera or from a saved photo.
+    /// Floating camera button, bottom right: scan a menu with the camera or from a saved photo.
     private var scanButton: some View {
         Menu {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
@@ -94,7 +94,7 @@ struct FoodCheckView: View {
             }
             Button { showingLibrary = true } label: { Label("Upload a menu photo", systemImage: "photo") }
         } label: {
-            FloatingPlus()
+            FloatingPlus(systemImage: "camera.fill")
         }
         .accessibilityLabel("Scan a menu")
     }

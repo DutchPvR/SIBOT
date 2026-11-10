@@ -182,10 +182,12 @@ extension View {
     }
 }
 
-/// The round purple plus used as the floating add button (Log, Reminders).
+/// The round purple floating button: a plus on Log and Reminders, a camera on Check.
 struct FloatingPlus: View {
+    var systemImage = "plus"
+
     var body: some View {
-        Image(systemName: "plus")
+        Image(systemName: systemImage)
             .font(.title2.weight(.bold))
             .foregroundStyle(.white)
             .frame(width: 56, height: 56)
