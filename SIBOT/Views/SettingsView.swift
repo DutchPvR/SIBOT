@@ -119,10 +119,10 @@ struct SettingsView: View {
                     NavigationLink("About") { AboutView() }
                 }
             }
-            .tabHeader("Settings")
+            .tabHeader("Settings", grouped: true)
             .scrollContentBackground(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .background(Theme.background)
+            .background(Theme.groupedBackground)
             .fileExporter(
                 isPresented: $showingExporter,
                 document: backupDocument,
@@ -229,6 +229,6 @@ private struct AboutView: View {
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
         .scrollContentBackground(.hidden)
-        .background(Theme.background)
+        .background(Theme.groupedBackground)
     }
 }

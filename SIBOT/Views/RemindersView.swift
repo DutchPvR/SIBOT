@@ -19,7 +19,7 @@ struct RemindersView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.background
+                Theme.groupedBackground
                 List {
                     Section("Today") {
                         if supplements.isEmpty {
@@ -59,15 +59,20 @@ struct RemindersView: View {
                     }
                 }
                 .scrollContentBackground(.hidden)
+                // Room under the last row so the floating button never covers it.
+                .contentMargins(.bottom, 80, for: .scrollContent)
             }
-            .tabHeader("Reminders") {
+            .overlay(alignment: .bottomTrailing) {
                 Button {
                     showingNew = true
                 } label: {
-                    Image(systemName: "plus")
+                    FloatingPlus()
                 }
                 .accessibilityLabel("Add reminder")
+                .padding(.trailing, 20)
+                .padding(.bottom, 16)
             }
+            .tabHeader("Reminders", grouped: true)
             .sheet(isPresented: $showingNew) {
                 SupplementEditSheet(supplement: nil)
             }
