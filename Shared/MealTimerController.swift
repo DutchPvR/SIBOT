@@ -7,6 +7,10 @@ import WidgetKit
 enum MealTimerController {
     static let notificationID = "mealTimerDone"
 
+    /// Set by the app to pass timer changes on to the Apple Watch.
+    /// Stays nil in the widget extension.
+    static var didChange: (() -> Void)?
+
     /// Marks "I just ate" (or ate at `date`): the fasting timer counts up from there.
     /// The goal gap only drives the "you can eat" notification and the color change.
     static func start(at date: Date = Date()) async {
@@ -24,6 +28,7 @@ enum MealTimerController {
         }
         await restartActivity(start: date, end: end)
         WidgetCenter.shared.reloadAllTimelines()
+        didChange?()
     }
 
     static func stop() async {
@@ -34,6 +39,7 @@ enum MealTimerController {
             .removePendingNotificationRequests(withIdentifiers: [notificationID])
         await endActivities()
         WidgetCenter.shared.reloadAllTimelines()
+        didChange?()
     }
 
     // MARK: - Private

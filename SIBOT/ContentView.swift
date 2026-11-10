@@ -25,7 +25,10 @@ struct ContentView: View {
             Task { await MealTimerSync.sync(meals) }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { MealTimerSync.reconcile(meals, context: modelContext) }
+            if phase == .active {
+                MealTimerSync.reconcile(meals, context: modelContext)
+                WatchSync.shared.push()
+            }
         }
     }
 }
