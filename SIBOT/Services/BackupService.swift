@@ -109,6 +109,10 @@ enum BackupService {
 
     /// Replaces everything in the app with the contents of a backup file.
     @MainActor
+    private static func deleteAll<T: PersistentModel>(_ type: T.Type, in context: ModelContext) throws {
+        for object in try context.fetch(FetchDescriptor<T>()) { context.delete(object) }
+    }
+
     static func restore(from url: URL, context: ModelContext) throws {
         let needsAccess = url.startAccessingSecurityScopedResource()
         defer { if needsAccess { url.stopAccessingSecurityScopedResource() } }
@@ -124,13 +128,14 @@ enum BackupService {
         for old in try context.fetch(FetchDescriptor<Supplement>()) {
             NotificationManager.cancel(supplementID: old.id)
         }
-        try context.delete(model: MealEntry.self)
-        try context.delete(model: DailyCheck.self)
-        try context.delete(model: Supplement.self)
-        try context.delete(model: SupplementLog.self)
-        try context.delete(model: FoodTrial.self)
-        try context.delete(model: BowelMovement.self)
-        try context.delete(model: BloatEpisode.self)
+        // Delete one by one: bulk deletes do not reach iCloud, so the old records would come back.
+        try deleteAll(MealEntry.self, in: context)
+        try deleteAll(DailyCheck.self, in: context)
+        try deleteAll(Supplement.self, in: context)
+        try deleteAll(SupplementLog.self, in: context)
+        try deleteAll(FoodTrial.self, in: context)
+        try deleteAll(BowelMovement.self, in: context)
+        try deleteAll(BloatEpisode.self, in: context)
 
         for m in file.meals {
             context.insert(MealEntry(date: m.date, text: text(m.text),

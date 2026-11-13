@@ -5,8 +5,8 @@ import SwiftData
 @Model
 final class DailyCheck {
     /// Start of the day this entry belongs to.
-    var day: Date
-    var bloated: Bool
+    var day: Date = Date()
+    var bloated: Bool = false
     /// False when the entry only holds bowel data and the bloat question was not answered.
     var answered: Bool = true
     /// 1 (mild) ... 5 (severe); 0 means not rated.

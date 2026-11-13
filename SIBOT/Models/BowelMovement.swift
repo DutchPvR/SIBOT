@@ -5,9 +5,9 @@ import SwiftData
 /// One bowel movement, logged at a time like a meal.
 @Model
 final class BowelMovement {
-    var date: Date
+    var date: Date = Date()
     /// Bristol stool type 1...7; 0 means not set.
-    var type: Int
+    var type: Int = 0
 
     init(date: Date = Date(), type: Int = 0) {
         self.date = date

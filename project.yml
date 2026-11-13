@@ -9,7 +9,7 @@ settings:
   base:
     SWIFT_VERSION: "5.9"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
     # Set this to your Apple Developer Team ID once your membership is active
     # (Xcode > Signing & Capabilities will also fill it in for you).
     DEVELOPMENT_TEAM: "8J27MJY2A3"
@@ -30,6 +30,9 @@ targets:
         NSFaceIDUsageDescription: SIBOT uses Face ID to unlock your diary.
         NSCameraUsageDescription: SIBOT uses the camera to read restaurant menus and suggest the safest dishes.
         ITSAppUsesNonExemptEncryption: false
+        # iCloud sync: CloudKit wakes the app with silent pushes when another device changes data.
+        UIBackgroundModes:
+          - remote-notification
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     entitlements:
@@ -37,6 +40,13 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.dutchpvr.sibot
+        # iCloud sync of the diary (SwiftData + CloudKit, see SIBOT/Services/Persistence.swift).
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.dutchpvr.sibot
+        com.apple.developer.icloud-services:
+          - CloudKit
+        # Xcode switches this to production when exporting for TestFlight / the App Store.
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dutchpvr.sibot
