@@ -107,12 +107,12 @@ enum BackupService {
         return data
     }
 
-    /// Replaces everything in the app with the contents of a backup file.
-    @MainActor
     private static func deleteAll<T: PersistentModel>(_ type: T.Type, in context: ModelContext) throws {
         for object in try context.fetch(FetchDescriptor<T>()) { context.delete(object) }
     }
 
+    /// Replaces everything in the app with the contents of a backup file.
+    @MainActor
     static func restore(from url: URL, context: ModelContext) throws {
         let needsAccess = url.startAccessingSecurityScopedResource()
         defer { if needsAccess { url.stopAccessingSecurityScopedResource() } }

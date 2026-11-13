@@ -5,7 +5,7 @@ import SwiftData
 final class MealEntry {
     var date: Date = Date()
     var text: String = ""
-    var statusRaw: String = FoodStatus.unknown.rawValue
+    var statusRaw: String = "unknown"
     /// Optional symptom rating after the meal: 1 (fine) to 5 (very bad).
     var symptomScore: Int?
 
