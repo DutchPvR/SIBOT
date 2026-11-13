@@ -4,7 +4,7 @@ import SwiftData
 /// One bout of bloating, logged at a time of day. A day can have several.
 @Model
 final class BloatEpisode {
-    var date: Date
+    var date: Date = Date()
     /// 1 (mild) ... 5 (severe); 0 means not rated.
     var severity: Int = 0
     /// Comma separated symptom names.

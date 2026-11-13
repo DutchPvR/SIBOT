@@ -92,6 +92,19 @@ its own copy, so the complication keeps counting even when the phone is away.
 Tapping the complication opens SIBOT on the watch (watchOS always opens the watch app, not the iPhone app).
 In the simulator, run the `SIBOTWatch` scheme on a paired iPhone + Apple Watch simulator pair.
 
+## iCloud sync
+
+Meals, bloating, bowel movements, reminders and their answers, and food trials sync to your private iCloud database, so they follow you to a new phone and survive a reinstall. Settings (timer gap, appearance, your own food list, the AI key) stay on the phone; use Back up for those.
+
+One-time setup:
+
+1. At developer.apple.com > Certificates, Identifiers & Profiles > Identifiers, add the iCloud container `iCloud.com.dutchpvr.sibot` (if Xcode has not already). Then open the App ID `com.dutchpvr.sibot` and turn on iCloud (CloudKit, with that container selected) and Push Notifications.
+2. Run `xcodegen` again and check Signing & Capabilities in Xcode for the SIBOT target: iCloud with CloudKit and the container ticked, Push Notifications, and Background Modes > Remote notifications.
+3. Run the app once from Xcode on your iPhone (a Debug build) while signed in to iCloud. That creates the record types in CloudKit's Development environment.
+4. In CloudKit Console (icloud.developer.apple.com), open the container and choose Deploy Schema Changes to Production. TestFlight and App Store builds use Production, so they will not sync until this is done. Repeat it whenever a model gains a new field.
+
+Settings > Data shows whether sync is on. When adding a field to a model later, give it a default value or make it optional; CloudKit requires it.
+
 ## AI fallback (optional)
 
 In **Settings**, paste an [OpenRouter](https://openrouter.ai) API key and, if you like, change the model name

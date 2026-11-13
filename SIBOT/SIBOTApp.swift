@@ -41,16 +41,26 @@ struct SIBOTApp: App {
         let defaults = UserDefaults.standard
 
         // First launch: start with a nightly ginger reminder at 10 PM. Edit or delete it in the Reminders tab.
+        // Skipped when reminders are already here (e.g. restored from iCloud); if iCloud brings an
+        // identical one later, SyncCleanup folds the two together.
         if !defaults.bool(forKey: "seededSupplements") {
-            context.insert(Supplement(name: "Ginger pills", minutes: 22 * 60))
-            try? context.save()
+            if ((try? context.fetchCount(FetchDescriptor<Supplement>())) ?? 0) == 0 {
+                context.insert(Supplement(name: "Ginger pills", minutes: 22 * 60))
+                try? context.save()
+            }
             defaults.set(true, forKey: "seededSupplements")
         }
 
         BowelMovement.migrateFromDailyChecks(context)
-        BloatLog.migrateLegacy(in: context)
+        // Runs once per install, so days that arrive from iCloud before their bloating
+        // entries do are not given a second entry.
+        if !defaults.bool(forKey: "migratedLegacyBloat") {
+            BloatLog.migrateLegacy(in: context)
+            defaults.set(true, forKey: "migratedLegacyBloat")
+        }
         BloatLog.reconcilePending(in: context)
         SupplementLogger.migrateLegacySlots(context)
+        SyncCleanup.run(in: context)
 
         let supplements = (try? context.fetch(FetchDescriptor<Supplement>())) ?? []
         NotificationManager.rescheduleAll(supplements)

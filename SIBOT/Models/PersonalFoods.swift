@@ -39,8 +39,8 @@ enum PersonalFoods {
 /// A food you are testing on purpose, one at a time, to see if you tolerate it.
 @Model
 final class FoodTrial {
-    var food: String
-    var startDate: Date
+    var food: String = ""
+    var startDate: Date = Date()
     /// 0 = still testing, 1 = tolerated, 2 = reacted.
     var resultRaw: Int = 0
     var notes: String = ""
