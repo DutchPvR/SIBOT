@@ -12,7 +12,7 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     # Set this to your Apple Developer Team ID once your membership is active
     # (Xcode > Signing & Capabilities will also fill it in for you).
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "8J27MJY2A3"
 targets:
   SIBOT:
     type: application
