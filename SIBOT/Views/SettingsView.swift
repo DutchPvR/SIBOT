@@ -128,6 +128,7 @@ struct SettingsView: View {
                     }
                     Button("Restore…") { showingImporter = true }
                     LabeledContent("Last backup", value: lastBackupText)
+                    LabeledContent("iCloud sync", value: iCloudText)
                     if let backupMessage {
                         Text(backupMessage).font(.footnote).foregroundStyle(.secondary)
                     }
@@ -240,6 +241,12 @@ struct SettingsView: View {
                 }
             }
         )
+    }
+
+    /// Your diary syncs through iCloud whenever this phone is signed in to it.
+    private var iCloudText: String {
+        guard Persistence.syncing else { return "Off" }
+        return FileManager.default.ubiquityIdentityToken == nil ? "Sign in to iCloud" : "On"
     }
 
     private var lastBackupText: String {

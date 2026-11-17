@@ -4,14 +4,14 @@ import SwiftData
 /// A supplement or medication reminder (e.g. ginger pills at 10 PM every night).
 @Model
 final class Supplement {
-    var id: UUID
-    var name: String
+    var id: UUID = UUID()
+    var name: String = ""
     /// Minutes after midnight, local time.
-    var minutes: Int
+    var minutes: Int = 0
     /// Calendar weekdays: 1 = Sunday ... 7 = Saturday.
-    var weekdays: [Int]
-    var enabled: Bool
-    var createdAt: Date
+    var weekdays: [Int] = [1, 2, 3, 4, 5, 6, 7]
+    var enabled: Bool = true
+    var createdAt: Date = Date()
     /// More dose times on the same day, besides `minutes`.
     var extraMinutes: [Int] = []
     /// e.g. "500 mg" or "2 capsules".
@@ -116,13 +116,13 @@ final class Supplement {
 /// Whether a dose was taken or skipped on a given day.
 @Model
 final class SupplementLog {
-    var supplementID: UUID
-    var supplementName: String
+    var supplementID: UUID = UUID()
+    var supplementName: String = ""
     /// When the answer was recorded.
-    var date: Date
+    var date: Date = Date()
     /// The day the dose belongs to (start of day).
-    var day: Date
-    var taken: Bool
+    var day: Date = Date()
+    var taken: Bool = false
     /// Which dose this answers: its time in minutes after midnight. -1 on answers from before multiple times existed.
     var slot: Int = -1
 

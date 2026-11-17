@@ -51,6 +51,7 @@ struct ContentView: View {
             AppLock.shared.sceneChanged(phase)
             if phase == .active {
                 BloatLog.reconcilePending(in: modelContext)
+                SyncCleanup.run(in: modelContext)
                 MealTimerSync.reconcile(meals, context: modelContext)
                 WatchSync.shared.push()
             }

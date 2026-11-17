@@ -3,9 +3,9 @@ import SwiftData
 
 @Model
 final class MealEntry {
-    var date: Date
-    var text: String
-    var statusRaw: String
+    var date: Date = Date()
+    var text: String = ""
+    var statusRaw: String = "unknown"
     /// Optional symptom rating after the meal: 1 (fine) to 5 (very bad).
     var symptomScore: Int?
 
