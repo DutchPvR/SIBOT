@@ -32,106 +32,34 @@ struct EatComplicationView: View {
     @Environment(\.widgetFamily) private var family
     let entry: EatEntry
 
+    /// X while waiting, checkmark when it is OK to eat, a dash until the iPhone has synced.
+    private var symbol: String {
+        switch entry.state {
+        case .wait: "xmark"
+        case .ok: "checkmark"
+        case .unknown: "minus"
+        }
+    }
+
+    private var mark: some View {
+        Image(systemName: symbol)
+            .fontWeight(.heavy)
+            .foregroundStyle(entry.state.color)
+            .widgetAccentable()
+    }
+
     var body: some View {
         switch family {
-        case .accessoryRectangular: rectangular
-        case .accessoryInline: inline
-        case .accessoryCorner: corner
-        default: circular
-        }
-    }
-
-    private var state: EatState { entry.state }
-
-    @ViewBuilder
-    private var countdown: some View {
-        if case .wait(let until) = state, until > entry.date {
-            Text(timerInterval: entry.date...until, countsDown: true)
-                .monospacedDigit()
-        }
-    }
-
-    private var circular: some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            VStack(spacing: 0) {
-                switch state {
-                case .wait:
-                    Text("WAIT")
-                        .font(.system(size: 11, weight: .heavy))
-                        .foregroundStyle(state.color)
-                        .widgetAccentable()
-                    countdown
-                        .font(.system(size: 12, weight: .semibold))
-                        .multilineTextAlignment(.center)
-                        .minimumScaleFactor(0.6)
-                        .lineLimit(1)
-                        .padding(.horizontal, 4)
-                case .ok:
-                    Image(systemName: "fork.knife")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(state.color)
-                        .widgetAccentable()
-                    Text("EAT")
-                        .font(.system(size: 11, weight: .heavy))
-                        .foregroundStyle(state.color)
-                        .widgetAccentable()
-                case .unknown:
-                    Image(systemName: "iphone")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.secondary)
-                }
+        case .accessoryInline:
+            Image(systemName: symbol)
+        case .accessoryCorner:
+            mark.font(.system(size: 22))
+        default:
+            ZStack {
+                AccessoryWidgetBackground()
+                mark.font(.system(size: 24))
             }
         }
-    }
-
-    private var rectangular: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(state.title)
-                .font(.system(.headline).weight(.heavy))
-                .foregroundStyle(state.color)
-                .widgetAccentable()
-            switch state {
-            case .wait:
-                HStack(spacing: 4) {
-                    countdown
-                    Text("left")
-                }
-                .font(.system(.body).weight(.semibold))
-            case .ok:
-                Text("Fasting goal reached")
-                    .font(.system(.footnote))
-                    .foregroundStyle(.secondary)
-            case .unknown:
-                Text("Open SIBOT on iPhone")
-                    .font(.system(.footnote))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private var inline: some View {
-        if case .wait(let until) = state, until > entry.date {
-            Text("Wait \(Text(timerInterval: entry.date...until, countsDown: true))")
-        } else {
-            Text(state.title)
-        }
-    }
-
-    private var corner: some View {
-        Image(systemName: state == .ok ? "fork.knife" : state == .unknown ? "iphone" : "hourglass")
-            .font(.system(size: 20, weight: .bold))
-            .foregroundStyle(state.color)
-            .widgetAccentable()
-            .widgetLabel {
-                if case .wait = state {
-                    countdown
-                } else {
-                    Text(state.title)
-                }
-            }
     }
 }
 
@@ -145,7 +73,7 @@ struct EatComplication: Widget {
                 .containerBackground(for: .widget) { Color.clear }
         }
         .configurationDisplayName("Safe to eat")
-        .description("Red Wait with the time left, then green OK to eat once your fasting gap is up.")
-        .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline, .accessoryCorner])
+        .description("An X while you wait, a checkmark once your fasting gap is up.")
+        .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryInline])
     }
 }

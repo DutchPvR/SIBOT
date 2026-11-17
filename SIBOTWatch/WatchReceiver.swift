@@ -23,6 +23,22 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
         }
     }
 
+    /// The reset button: restart the timer here right away, then tell the iPhone,
+    /// which logs the meal and sends the timer back.
+    func ateNow() {
+        let now = Date()
+        store(WatchTimerPayload.make(start: now, gapHours: MealTimerStore.gapHours, sent: now))
+        activate()
+        let session = WCSession.default
+        let message = WatchTimerPayload.ateNowMessage(at: now)
+        // Queued delivery always arrives, even if the iPhone is out of reach right now.
+        session.transferUserInfo(message)
+        // When the iPhone is reachable this gets there at once.
+        if session.isReachable {
+            session.sendMessage(message, replyHandler: nil, errorHandler: nil)
+        }
+    }
+
     private func store(_ payload: [String: Any]) {
         guard WatchTimerPayload.apply(payload) else { return }
         WidgetCenter.shared.reloadAllTimelines()
