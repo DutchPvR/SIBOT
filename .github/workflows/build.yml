@@ -38,3 +38,58 @@ jobs:
         with:
           name: build-log
           path: build.log
+
+  # Archives the app without signing and checks the Apple Watch app is inside it,
+  # so a TestFlight upload carries the watch app too.
+  archive-check:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen
+
+      - name: Archive without signing
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project SIBOT.xcodeproj \
+            -scheme SIBOT \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/SIBOT.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee archive.log | tail -n 20
+
+      - name: Check the watch app is embedded
+        run: |
+          set -eu
+          A="$RUNNER_TEMP/SIBOT.xcarchive"
+          echo "Bundles in the archive:"
+          find "$A/Products" \( -name '*.app' -o -name '*.appex' \) | sed "s|$A/||"
+          # A generic archive has no ApplicationPath and cannot be uploaded to TestFlight.
+          /usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:ApplicationPath' "$A/Info.plist"
+          APP="$A/Products/Applications/SIBOT.app"
+          WATCH="$APP/Watch/SIBOTWatch.app"
+          COMP="$WATCH/PlugIns/SIBOTWatchWidget.appex"
+          for b in "$APP" "$WATCH" "$COMP"; do
+            test -f "$b/Info.plist" || { echo "Missing: ${b#$A/}"; exit 1; }
+            id=$(plutil -extract CFBundleIdentifier raw "$b/Info.plist")
+            short=$(plutil -extract CFBundleShortVersionString raw "$b/Info.plist")
+            build=$(plutil -extract CFBundleVersion raw "$b/Info.plist")
+            echo "$id $short ($build)"
+            echo "$short ($build)" >> versions.txt
+          done
+          plutil -extract WKCompanionAppBundleIdentifier raw "$WATCH/Info.plist"
+          # App Store Connect rejects a watch app whose version differs from the iPhone app's.
+          test "$(sort -u versions.txt | wc -l)" -eq 1 || { echo "Version mismatch"; exit 1; }
+
+      - name: Upload archive log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-log
+          path: archive.log

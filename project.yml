@@ -93,6 +93,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.dutchpvr.sibot.watchkitapp
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "4"
+        # Ship only inside SIBOT.app/Watch, so Product > Archive makes an iOS app archive
+        # that can go to TestFlight, not a generic archive.
+        SKIP_INSTALL: YES
     dependencies:
       - target: SIBOTWatchWidget
   # The watch face complication (WidgetKit).
