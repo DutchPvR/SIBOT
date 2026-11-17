@@ -16,7 +16,7 @@ struct DayLogView: View {
     let onAddAt: (Date, LogEntryKind) -> Void
 
     @State private var editingMeal: MealEntry?
-    @State private var addingTo: Date?
+    @State private var addingTo: MealTime?
     @State private var editingBowel: BowelMovement?
     @State private var editingBloat = false
     @State private var editingEpisode: BloatEpisode?
@@ -32,9 +32,15 @@ struct DayLogView: View {
         .sheet(isPresented: $editingBloat) { BloatSheet(day: day, startsAsNoBloat: check?.answer == false) }
         .sheet(item: $editingEpisode) { BloatSheet(day: $0.date, episode: $0) }
         .sheet(item: $editingBowel) { BowelSheet(existing: $0) }
-        .sheet(isPresented: Binding(get: { addingTo != nil }, set: { if !$0 { addingTo = nil } })) {
-            AddMealSheet(initialDate: addingTo ?? Date(), title: "Add to this meal")
+        .sheet(item: $addingTo) { meal in
+            AddMealSheet(initialDate: meal.date, title: "Add to this meal")
         }
+    }
+
+    /// The time of the meal an item is being added to. The sheet is built from it, so it never falls back to now.
+    private struct MealTime: Identifiable {
+        let id = UUID()
+        let date: Date
     }
 
     private func hour(_ date: Date) -> Int { calendar.component(.hour, from: date) }
@@ -159,7 +165,7 @@ struct DayLogView: View {
                 }
             }
             Button { editingMeal = meal } label: { Label("Edit", systemImage: "pencil") }
-            Button { addingTo = meal.date } label: { Label("Add another item", systemImage: "plus") }
+            Button { addingTo = MealTime(date: meal.date) } label: { Label("Add another item", systemImage: "plus") }
             Button("Delete", role: .destructive) { modelContext.delete(meal) }
         } label: {
             HStack(spacing: 8) {

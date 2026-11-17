@@ -12,11 +12,15 @@ struct LogView: View {
     var jumpToNow = 0
 
     @State private var selected = Date()
-    @State private var showingAdd = false
-    @State private var addSeed = Date()
-    @State private var showingBowel = false
-    @State private var showingBloat = false
+    /// What to add and when. The sheet is built from this value, so it always gets the time you picked.
+    @State private var adding: AddRequest?
     @State private var showingCalendar = false
+
+    private struct AddRequest: Identifiable {
+        let id = UUID()
+        let date: Date
+        let kind: LogEntryKind
+    }
 
     private var calendar: Calendar { .current }
 
@@ -32,14 +36,12 @@ struct LogView: View {
             .floatingButton { addButton }
             .tabHeader("Log")
             .onChange(of: jumpToNow) { _, _ in selected = Date() }
-            .sheet(isPresented: $showingAdd) {
-                AddMealSheet(initialDate: addSeed)
-            }
-            .sheet(isPresented: $showingBowel) {
-                BowelSheet(initialDate: addSeed)
-            }
-            .sheet(isPresented: $showingBloat) {
-                BloatSheet(day: addSeed)
+            .sheet(item: $adding) { request in
+                switch request.kind {
+                case .meal: AddMealSheet(initialDate: request.date)
+                case .bowel: BowelSheet(initialDate: request.date)
+                case .bloat: BloatSheet(day: request.date)
+                }
             }
             .sheet(isPresented: $showingCalendar) { calendarSheet }
         }
@@ -121,12 +123,7 @@ struct LogView: View {
     }
 
     private func openAdd(_ date: Date, _ kind: LogEntryKind) {
-        addSeed = date
-        switch kind {
-        case .meal: showingAdd = true
-        case .bowel: showingBowel = true
-        case .bloat: showingBloat = true
-        }
+        adding = AddRequest(date: date, kind: kind)
     }
 }
 
