@@ -4,39 +4,54 @@ import UserNotifications
 
 /// Shows notifications as banners while the app is open, and handles the
 /// Taken / Skipped buttons on supplement reminders.
+///
+/// Uses the completion-handler versions of the delegate methods on purpose.
+/// With the `async` versions, Swift calls the system's completion handler from a
+/// background thread, and iOS crashes the app ("Call must be made on main thread")
+/// when a notification is tapped to open it.
 final class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
         let info = response.notification.request.content.userInfo
-        guard let idString = info["supplementID"] as? String,
-              let id = UUID(uuidString: idString) else { return }
-
         let taken: Bool
         switch response.actionIdentifier {
         case NotificationManager.takenAction: taken = true
         case NotificationManager.skippedAction: taken = false
-        default: return
+        default:
+            // A plain tap (or dismiss) just opens the app.
+            completionHandler()
+            return
         }
-
+        guard let idString = info["supplementID"] as? String,
+              let id = UUID(uuidString: idString) else {
+            completionHandler()
+            return
+        }
         let name = info["supplementName"] as? String
-        let slot = info["slot"] as? Int
-        await MainActor.run {
-            SupplementLogger.record(
-                supplementID: id,
-                name: name,
-                slot: slot,
-                taken: taken,
-                in: Persistence.container.mainContext
-            )
+        let slot = (info["slot"] as? NSNumber)?.intValue
+
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                SupplementLogger.record(
+                    supplementID: id,
+                    name: name,
+                    slot: slot,
+                    taken: taken,
+                    in: Persistence.container.mainContext
+                )
+            }
+            completionHandler()
         }
     }
 }

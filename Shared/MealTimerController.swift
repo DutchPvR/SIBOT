@@ -11,6 +11,9 @@ enum MealTimerController {
     /// Stays nil in the widget extension.
     static var didChange: (() -> Void)?
 
+    /// The home and lock screen fasting timer widget. Only this one shows the timer.
+    static let widgetKind = "MealTimerWidget"
+
     /// Marks "I just ate" (or ate at `date`): the fasting timer counts up from there.
     /// The goal gap only drives the "you can eat" notification and the color change.
     static func start(at date: Date = Date()) async {
@@ -19,30 +22,41 @@ enum MealTimerController {
 
         MealTimerStore.startDate = date
         MealTimerStore.endDate = end
+        // Refresh the widget and the watch first, so they reset right away
+        // instead of waiting for the notification and the Live Activity below.
+        refreshWidgetAndWatch()
 
-        if end > Date() && MealTimerStore.goalNotificationOn {
-            await scheduleNotification(after: end.timeIntervalSinceNow, hours: gap)
-        } else {
-            UNUserNotificationCenter.current()
-                .removePendingNotificationRequests(withIdentifiers: [notificationID])
-        }
-        await restartActivity(start: date, end: end)
-        WidgetCenter.shared.reloadAllTimelines()
-        didChange?()
+        async let notification: Void = updateNotification(end: end, hours: gap)
+        async let activity: Void = restartActivity(start: date, end: end)
+        _ = await (notification, activity)
     }
 
     static func stop() async {
         MealTimerStore.startDate = nil
         MealTimerStore.endDate = nil
+        refreshWidgetAndWatch()
 
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: [notificationID])
         await endActivities()
-        WidgetCenter.shared.reloadAllTimelines()
-        didChange?()
     }
 
     // MARK: - Private
+
+    /// Reloads only the timer widget (the Quick log widget doesn't show the timer) and tells the watch.
+    private static func refreshWidgetAndWatch() {
+        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
+        didChange?()
+    }
+
+    private static func updateNotification(end: Date, hours: Double) async {
+        if end > Date() && MealTimerStore.goalNotificationOn {
+            await scheduleNotification(after: end.timeIntervalSinceNow, hours: hours)
+        } else {
+            UNUserNotificationCenter.current()
+                .removePendingNotificationRequests(withIdentifiers: [notificationID])
+        }
+    }
 
     private static func scheduleNotification(after seconds: TimeInterval, hours: Double) async {
         let center = UNUserNotificationCenter.current()
@@ -59,9 +73,12 @@ enum MealTimerController {
         try? await center.add(request)
     }
 
+    /// Ends every running timer Live Activity at the same time rather than one after another.
     private static func endActivities() async {
-        for activity in Activity<MealTimerAttributes>.activities {
-            await activity.end(nil, dismissalPolicy: .immediate)
+        await withTaskGroup(of: Void.self) { group in
+            for activity in Activity<MealTimerAttributes>.activities {
+                group.addTask { await activity.end(nil, dismissalPolicy: .immediate) }
+            }
         }
     }
 

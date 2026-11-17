@@ -24,12 +24,14 @@ struct MealTimerProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<MealTimerEntry>) -> Void) {
         let entry = currentEntry()
+        var entries = [entry]
+        // The counter runs on its own. Add one more entry for the moment the goal is reached,
+        // so the color switches on time without asking the system for another reload.
         if let end = entry.endDate, end > entry.date {
-            // The counter runs on its own. Reload at the goal so the color can switch.
-            completion(Timeline(entries: [entry], policy: .after(end)))
-        } else {
-            completion(Timeline(entries: [entry], policy: .never))
+            entries.append(MealTimerEntry(date: end, startDate: entry.startDate, endDate: end))
         }
+        // Nothing else changes until the app logs a new meal, which reloads this widget.
+        completion(Timeline(entries: entries, policy: .never))
     }
 
     private func currentEntry() -> MealTimerEntry {
@@ -104,7 +106,7 @@ struct MealTimerWidgetView: View {
 }
 
 struct MealTimerWidget: Widget {
-    let kind = "MealTimerWidget"
+    let kind = MealTimerController.widgetKind
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: MealTimerProvider()) { entry in
