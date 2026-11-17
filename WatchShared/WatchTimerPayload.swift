@@ -44,6 +44,20 @@ enum WatchTimerPayload {
         return true
     }
 
+    // MARK: - Reset from the watch
+
+    static let ateNowKey = "ateNow"
+
+    /// Watch side: the message that tells the iPhone "I just ate" at `date`.
+    static func ateNowMessage(at date: Date = Date()) -> [String: Any] {
+        [ateNowKey: date.timeIntervalSince1970]
+    }
+
+    /// iPhone side: the meal time in an "I just ate" message from the watch, if it is one.
+    static func ateNowDate(in message: [String: Any]) -> Date? {
+        (message[ateNowKey] as? Double).map { Date(timeIntervalSince1970: $0) }
+    }
+
     private static var defaults: UserDefaults {
         UserDefaults(suiteName: MealTimerStore.appGroup) ?? .standard
     }

@@ -6,7 +6,7 @@ A personal iPhone app for following the Cedars-Sinai low-fermentation diet for S
 - **Meal log** with a 14-day chart and an optional 1-5 symptom rating per meal.
 - **Fasting timer** that counts up from your last meal (tap "I just ate" to restart it). A goal gap (default 4 hours per the Cedars-Sinai handout, adjustable) turns it green and sends a notification.
 - **Home screen widget + Live Activity** that show the count-up and let you restart it.
-- **Apple Watch complication** that shows a red **Wait** with the time left, then a green **OK to eat** once the goal gap from Settings is up.
+- **Apple Watch complication** that shows a red **X** while you wait and a green **checkmark** once the goal gap from Settings is up. Tap it for the timer and a **Reset** button ("I just ate").
 - **Reminders tab** for supplements (ginger pills are set up for you at 10 PM). Pick the time and days for each one, then log Taken or Skipped from the app or straight from the notification. A history list keeps the record.
 
 SIBOT is a personal tracking tool, not medical advice. The starter food list in
@@ -89,7 +89,13 @@ its own copy, so the complication keeps counting even when the phone is away.
 3. Open SIBOT on the watch once, then on the watch face: touch and hold > **Edit** > **Complications**, pick a
    slot and choose **SIBOT > Safe to eat**. It also works as a Smart Stack widget.
 
-Tapping the complication opens SIBOT on the watch (watchOS always opens the watch app, not the iPhone app).
+Tapping the complication opens SIBOT on the watch (watchOS always opens the watch app, not the iPhone app),
+which shows the time since your last meal and a **Reset** button. Reset restarts the timer on the watch at
+once and tells the iPhone, which adds the meal to the log the next time you open the app.
+
+If the watch app is missing after a TestFlight install, open the **Watch** app on the iPhone, go to
+**My Watch**, scroll to **Available Apps** and tap **Install** next to SIBOT (or install it from the
+TestFlight app on the watch).
 In the simulator, run the `SIBOTWatch` scheme on a paired iPhone + Apple Watch simulator pair.
 
 ## AI fallback (optional)
@@ -105,4 +111,4 @@ iPhone Keychain and sent only to openrouter.ai. Without a key, the app still wor
 - `SIBOT/` the app (SwiftUI, SwiftData, Swift Charts)
 - `SIBOTWidget/` home screen widget and Live Activity
 - `SIBOTWatch/` Apple Watch app; `SIBOTWatchWidget/` the watch face complication
-- `WatchShared/` what the iPhone sends the watch, and the Wait / OK to eat logic
+- `WatchShared/` what the iPhone and watch send each other, and the wait / OK to eat logic
